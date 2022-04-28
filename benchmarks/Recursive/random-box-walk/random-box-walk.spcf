@@ -1,0 +1,28 @@
+# depth 85
+# discretization 0 2.5 0.1
+
+# outputSplitProgress 0
+# outputCurrentPath 1
+# outputCurrentArea 0
+
+
+# This SPCF program models a random walk that is cut of at both edges (called random-box-walk).
+# The walks starts at 0. In each iteration a value s is draw from uniform(0, 1). If s < 0.5 we walk s to the left otherwise we walk s to the right.
+# In particular, the walk does not have mean 0, as walks to the left occur with stepwidth (< 0.5) and to the right with stepwidth (> 0.5).
+# The walk is stopped if either -0.8 or 0.8 is surpassed.
+
+
+letrec f x =
+    if (x <= -0.8) then
+        0
+    else
+        if (x >= 0.8) then
+            0
+        else
+            let s = sample uniform(0, 1) in
+            s + (if (s <= 0.5) then f (x - s) else f (x + s))
+in
+
+
+let t = f 0 in
+t

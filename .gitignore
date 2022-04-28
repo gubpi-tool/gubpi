@@ -1,0 +1,8 @@
+app/
+bin/
+obj/
+output/
+*.o
+vinci
+!vinci/
+*.dll

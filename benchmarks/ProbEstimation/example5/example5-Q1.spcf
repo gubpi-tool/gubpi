@@ -1,0 +1,21 @@
+# depth 400
+# discretization -0.1 0.1 0.2
+
+# Program: example5
+# Query: x + y > z + 10
+
+let x = sample uniform(-10.0,10.0) in
+let y = sample uniform(-5.0,5.0) in
+let z = sample uniform(-100.0,100.0) in
+
+let x, y, z =
+    if (x + y + z <= 3.0) then 
+        (|x + 1, y + 1, z + 1 |)
+    else
+        (|x, y, z |)
+in 
+
+if (x + y > z + 10) then 
+    0
+else 
+    1

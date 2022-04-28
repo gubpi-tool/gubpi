@@ -1,0 +1,28 @@
+# depth 400
+# discretization -0.1 0.1 0.2
+
+# Program: example4
+# Query: x + y > 10
+
+let x = sample uniform(-10, 10) in
+let y = sample uniform(-5, 5) in
+
+let y =
+    if (x + y < 4.0) then 
+        y + 5.0 
+    else 
+        y
+in 
+
+let x =        
+    if (x + y >= 3.0) then 
+        y + 1.0
+    else 
+        x
+in
+
+if (x + y > 10) then 
+    0
+else 
+    1
+

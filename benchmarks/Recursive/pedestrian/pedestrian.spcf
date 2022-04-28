@@ -1,0 +1,21 @@
+# depth 50
+# discretization 0.0 3.0 0.1
+# epsilonScore 0.02
+# epsilonVar 1
+
+# outputSplitProgress 0
+# outputCurrentPath 1
+# outputCurrentArea 0
+
+
+# The pedestrian example modelling a pedestrian that has gotten. See e.g., [Guaranteed Bounds for Posterior Inference in Universal Probabilistic Programming, PLDI22] or [Densities of almost-surely terminating probabilistic programs are differentiable almost everywhere, ESOP21] for details
+# The running time can be reduced (at the price of precision) by increasing epsilonScore.
+
+let start = sample uniform(0, 3)
+in let walk = fix walk pos.
+    if pos then 0 else
+        let step  = sample uniform(0, 1)
+        in let newPos = if sample uniform(-0.5, 0.5) then pos - step else pos + step
+        in step + walk newPos
+in let m = score(pdfnormal(1.1, 0.1, walk start))
+in start

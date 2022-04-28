@@ -1,0 +1,16 @@
+# depth 200
+# discretization -0.1 0.1 0.2
+
+# Taken from PSI repository
+# Location: PSI/test/fun/evidence/model1.psi 
+
+let flip = \p. if (sample uniform(0, 1) <= p) then 1 else 0 in 
+
+let evidence = flip 0.5 in 
+
+(if (evidence > 0.5) then 
+    let coin = flip 0.5 in 
+    score(coin)
+else 0);
+
+evidence

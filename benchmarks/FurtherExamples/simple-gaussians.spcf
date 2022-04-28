@@ -1,0 +1,9 @@
+# Taken from the PSI repository
+# Location: PSI/text/ppaml/simple-gaussians.psi
+
+let m = sample normal(0, sqrt(5)) in
+
+score (pdfnormal(9, sqrt(3), m));
+score (pdfnormal(8, sqrt(3), m));
+
+m

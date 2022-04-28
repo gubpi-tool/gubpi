@@ -1,0 +1,49 @@
+# depth 200
+# discretization -0.1 0.1 0.2
+# outputSplitProgress 0
+# outputCurrentPath 1
+# outputCurrentArea 0
+
+# Taken from PSI repository
+# Location: PSI/test/r2/noisyOrModel.psi
+
+let flip = \p. if (sample uniform(0, 1) <= p) then 1 else 0 in 
+
+let n0 = flip 0.5 in 
+let n4 = flip 0.5 in 
+
+
+let n1, n21 = 
+    if (n0 > 0.5) then 
+        (|flip 0.8, flip 0.8 |)
+    else 
+        (|flip 0.1, flip 0.1 |)
+in 
+
+let n22, n33 = 
+    if (n4 > 0.5) then 
+        (|flip 0.8, flip 0.8 |)
+    else 
+        (|flip 0.1, flip 0.1 |)
+in 
+
+let n2 = if (n21 < 0.5) and (n22 < 0.5) then 0 else 1 in 
+
+let n31 = 
+    if (n1 > 0.5) then 
+        flip 0.8
+    else 
+        flip 0.1
+in 
+
+let n32 = 
+    if (n2 > 0.5) then 
+        flip 0.8
+    else 
+        flip 0.1
+in 
+
+
+let n3 = if (n31 < 0.5) and (n32 < 0.5) and (n33 < 0.5) then 0 else 1 in 
+
+n3

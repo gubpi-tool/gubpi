@@ -1,0 +1,18 @@
+# depth 130
+# discretization -0.1 19.9 1
+
+# outputSplitProgress 0
+# outputCurrentPath 0
+# outputCurrentArea 0
+
+# This is the cav-example-7 taken from the PSI repository (translated into SPCF).
+# The original programs is located in PSI/test/colorado/probabilistic-program-benchmarks/cav-example-7.psi
+
+letrec f x =
+    if (x < 5) then
+        1 + f (if (sample uniform(0, 1) > 0.2 * x) then x + 1 else x)
+    else
+        0
+in
+
+f 0

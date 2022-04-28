@@ -1,0 +1,93 @@
+# depth 50
+# discretization -0.1 0.1 0.2
+
+# outputSplitProgress 0
+# outputCurrentPath 0
+# outputCurrentArea 0
+
+# Program: beauquier-etal-3
+# Query: count < 1
+
+let p = 0.5 in
+
+let process1d = if (sample uniform(0, 1) <= p) then 1 else 0 in 
+let process1p = if (sample uniform(0, 1) <= p) then 1 else 0 in
+let process2d = if (sample uniform(0, 1) <= p) then 1 else 0 in
+let process2p = if (sample uniform(0, 1) <= p) then 1 else 0 in
+let process3d = if (sample uniform(0, 1) <= p) then 1 else 0 in
+let process3p = if (sample uniform(0, 1) <= p) then 1 else 0 in
+
+
+letrec f x = 
+	let oldprocess1d, oldprocess1p, oldprocess2d, oldprocess2p, oldprocess3d, oldprocess3p, count = x in
+
+	let process1d =
+		if (oldprocess1d >= oldprocess3d) and (oldprocess1d <= oldprocess3d) then
+			1.0 - oldprocess1d
+		else 
+			oldprocess1d
+	in
+
+	let process1p =
+		if (oldprocess1d >= oldprocess3d) and (oldprocess1d <= oldprocess3d) and (oldprocess1p >= oldprocess3p) and (oldprocess1p <= oldprocess3p) then
+			if (sample uniform(0, 1) <= p) then oldprocess1p else 1.0 - oldprocess1p
+		else 
+			oldprocess1p
+	in
+
+	let process2d = 
+		if (oldprocess2d >= oldprocess1d) and (oldprocess2d <= oldprocess1d) then
+			1.0 - oldprocess2d
+		else
+			oldprocess2d
+	in
+
+	let process2p =
+		if (oldprocess2d >= oldprocess1d) and (oldprocess2d <= oldprocess1d) and (oldprocess2p >= oldprocess1p) and (oldprocess2p <= oldprocess1p) then
+			if (sample uniform(0, 1) <= p) then oldprocess2p else 1.0 - oldprocess2p
+		else 
+			oldprocess2p
+	in
+
+	let process3d = 
+		if (oldprocess3d >= oldprocess2d) and (oldprocess3d <= oldprocess2d) then
+			1.0 - oldprocess3d
+		else
+			oldprocess3d
+	in
+
+	let process3p =
+		if (oldprocess3d >= oldprocess2d) and (oldprocess3d <= oldprocess2d) and (oldprocess3p >= oldprocess2p) and (oldprocess3p <= oldprocess2p) then
+			if (sample uniform(0, 1) <= p) then oldprocess3p else 1.0 - oldprocess3p
+		else 
+			oldprocess3p
+	in
+
+	let sum = process1p + process2p + process3p in
+
+	if (sum > 1) then
+		f (| process1d, process1p, process2d, process2p, process3d, process3p, count + 1 |)
+	else
+		# exit the loop in the next itertaion
+		(| process1d, process1p, process2d, process2p, process3d, process3p, count + 1 |)
+
+in
+
+let sum = process1p + process2p + process3p in
+
+let res = 
+	if (sum > 1.1) then
+		f (| process1d, process1p, process2d, process2p, process3d, process3p, 0 |)
+	else
+		(| process1d, process1p, process2d, process2p, process3d, process3p, 0 |)
+in 
+
+let process1d, process1p, process2d, process2p, process3d, process3p, count = res in
+
+
+
+# Q1: estimateProb(count < 1)
+if (count < 1) then 
+	0 
+else 
+	1

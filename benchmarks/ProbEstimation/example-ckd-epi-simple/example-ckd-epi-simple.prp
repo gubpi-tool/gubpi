@@ -1,0 +1,2 @@
+estimateProb (f1 <= 4.4 && f >= 4.6);
+estimateProb (f1 >= 4.6 && f <= 4.4)

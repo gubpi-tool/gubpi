@@ -1,0 +1,39 @@
+# depth 200
+# discretization -0.1 0.1 0.2
+
+# Taken from PSI repository.
+# Location: PSI/test/r2/burglarAlarm.psi or PSI/test/effsampa/burglarAlarm.psi
+
+let flip = \p. if (sample uniform(0, 1) <= p) then 1 else 0 in 
+
+let earthquake = flip 0.0001 in
+
+let burglary = flip 0.001 in
+
+let alarm = if (earthquake < 0.5) and (burglary < 0.5) then 0 else 1 in 
+
+let phoneWorking = 
+    if (earthquake > 0.5) then 
+        flip 0.7
+    else
+        flip 0.99
+in 
+
+let maryWakes = 
+    if (alarm > 0.5) then 
+        if (earthquake > 0.5) then 
+            flip 0.8
+        else
+            flip 0.6
+    else
+        flip 0.2
+in
+
+let called = if (maryWakes > 0.5) and (phoneWorking > 0.5) then 1 else 0 in 
+
+(if (called > 0.5) then 
+    0
+else
+    score(0) )
+;
+burglary

@@ -1,0 +1,21 @@
+# depth 200
+# discretization -4 4 0.5
+# epsilonScore 0.05
+# epsilonVar 0.05
+
+# outputSplitProgress 0
+# outputCurrentPath 1
+# outputCurrentArea 1
+
+# From:
+# Zhou, Y., Gram-Hansen, B. J., Kohn, T., Rainforth, T., Yang, H., & Wood, F. (2020). LF-PPL: A low-level first order probabilistic programming language for non-differentiable models. AISTATS 2019 - 22nd International Conference on Artificial Intelligence and Statistics, 89.
+
+let data = [-2.0, -2.5, -1.7, -1.9, -2.2, 1.5, 2.2, 3.0, 1.2, 2.8] in
+let mu11 = sample truncnormal(0, 2, -4, 4) in
+let mu12 = sample truncnormal(0, 2, -4, 4) in
+let mu21 = sample truncnormal(0, 2, -4, 4) in
+let mu22 = sample truncnormal(0, 2, -4, 4) in
+letrec iterate xs = match xs
+  | [] -> mu11 + mu21
+  | [x | xs] -> score(0.5 * (pdfnormal(mu11, 1, x) + pdfnormal(mu12, 1, x))); score(0.5 * (pdfnormal(mu21, 1, x) + pdfnormal(mu22, 1, x))); iterate xs
+in iterate data

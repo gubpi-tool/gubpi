@@ -1,0 +1,42 @@
+# depth 200
+# discretization -0.1 0.1 0.2
+
+# outputSplitProgress 0
+# outputCurrentPath 1
+# outputCurrentArea 0
+
+# Taken from PSI repository.
+# Location: PSI/test/coin_pattern.psi
+
+
+let flip = \p. if (sample uniform(0, 1) <= p) then 1 else 0 in 
+
+let hasPattern = flip 0.5 in 
+
+let x1,x2,x3 = 
+    if (hasPattern < 0.5) then 
+        (|0,1,0|)
+    else
+        (|flip 0.5,flip 0.5,flip 0.5|)
+in 
+
+
+(if (x1 <= 0) and (0 <= x1) then 
+    0
+else
+    score(0)
+);
+
+(if (x2 <= 1) and (1 <= x2) then 
+    0
+else
+    score(0)
+);
+
+(if (x3 <= 0) and (0 <= x3) then 
+    0
+else
+    score(0)
+);
+
+hasPattern

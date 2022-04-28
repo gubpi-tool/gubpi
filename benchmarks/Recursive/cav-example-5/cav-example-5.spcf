@@ -1,0 +1,49 @@
+# depth 120
+# discretization -0.1 7.9 1
+
+# outputSplitProgress 0
+# outputCurrentPath 0
+# outputCurrentArea 0
+
+# This is the cav-example-5 taken from the PSI repository (translated into SPCF).
+# The original programs is located in PSI/test/colorado/probabilistic-program-benchmarks/cav-example-5.psi
+
+letrec f x =
+    let money, i = x in
+
+    if (money < 10) then
+        i
+    else
+        let bet = sample uniform(5, 10) in
+
+        let money = money - bet in
+
+        let bankGuard = sample uniform(0, 1) in
+
+        let money =
+            if (bankGuard <= 0.94737) then
+                if (sample uniform(0, 1) <= 0.333) then
+                    if (sample uniform(0, 1) <= 0.5) then
+                        money + 1.5 * bet
+                    else
+                        money + 1.1 * bet
+                else
+                    if (sample uniform(0, 1) <= 0.5) then
+                        if (sample uniform(0, 1) <= 0.33333) then
+                            money + 1.5 * bet
+                        else
+                            money + 1.1 * bet
+                    else
+                        if (sample uniform(0, 1) <= 0.66667) then
+                            money + 0.3 * bet
+                        else
+                            money
+            else
+                money
+
+        in
+
+        f (|money, i + 1|)
+in
+
+f (|10, 0|)

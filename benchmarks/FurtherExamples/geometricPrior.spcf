@@ -1,0 +1,18 @@
+# depth 45
+# discretization 0 5 0.25
+# epsilonScore 0.02
+
+# outputSplitProgress 0
+# outputCurrentPath 1
+# outputCurrentArea 1
+
+# We sample t from a geometric distribution in which each step is uniform and observe the final length of the walk to be 2.
+
+letrec f x = 
+    if (sample uniform(0,1) <= 0.5) then 0 else sample uniform(0, 1) + f(x+1)
+in 
+
+let t = f 1 in
+
+score(pdfnormal(2.0, 1, t));
+t

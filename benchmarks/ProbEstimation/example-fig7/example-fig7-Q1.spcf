@@ -1,0 +1,22 @@
+# depth 100
+# discretization -0.1 0.1 0.2
+
+
+# Program: example-fig7
+# Query: x <= 1000
+
+letrec f a =
+    let x, y, lnX = a in
+
+    if (y <= 0.5) then 
+        f (| x * 2, sample uniform(0, 1), lnX + 1 |)
+    else
+        x
+in 
+
+let x = f (|2, sample uniform(0, 1), 1 |) in
+
+if (x <= 1000) then 
+    0
+else
+    1

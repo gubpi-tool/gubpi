@@ -1,0 +1,8 @@
+// TODO: formulate in terms of multi-dimensional arrays
+
+def main(){
+    whichBox := uniformInt(1,3);
+    isRed := if whichBox==1 { true } else { if whichBox==2 { false } else { flip(1/2); } };
+    observe(isRed);
+    return whichBox; // expected: 1/3·δ(3)[whichBox]+2/3·δ(1)[whichBox]
+}

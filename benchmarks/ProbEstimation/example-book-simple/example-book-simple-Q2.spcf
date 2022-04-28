@@ -1,0 +1,46 @@
+# depth 100
+# discretization -0.1 0.1 0.2
+
+# outputSplitProgress 0
+# outputCurrentPath 0
+# outputCurrentArea 0
+
+# Program: example-book-simple
+# Query: count >= 4
+
+let tgtValue = sample uniform(0, 500) in
+
+let m = 
+  fix f x.
+    let curValue, count = x in 
+
+    let d = (tgtValue - curValue) + sample uniform(-20, 20) in
+
+    let newCurValue = 
+      if (curValue + d > 500) then
+        500
+      else
+        if (curValue + d < 1) then
+          1
+        else
+          curValue + d
+    in
+
+    let newCount = count + 1 in
+    let diff = newCurValue - tgtValue in
+
+    if (newCount >= 10) then
+      (|newCurValue, newCount|)
+    else
+      if (-5 <= diff) and (diff <= 5) then
+        (|newCurValue, newCount|)
+      else
+        f(|newCurValue, newCount|)
+
+in
+
+let curValue, count = m (|sample uniform(0, 500), 0|)  in 
+if (count >= 4) then 
+  0
+else 
+  1

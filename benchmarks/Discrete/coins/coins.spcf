@@ -1,0 +1,16 @@
+# depth 200
+# discretization -0.1 0.1 0.2
+
+# Taken from PSI repository (modified)
+# Location: PSI/test/fun/coins.psi (modified to return only one element of the tuple)
+
+let flip = \p. if (sample uniform(0, 1) <= p) then 1 else 0 in 
+
+let c1 = flip 0.5 in 
+let c2 = flip 0.5 in 
+
+(if (c1 > 0.5) and (c2 > 0.5) then 
+    score(0)
+else   
+    0);
+c1

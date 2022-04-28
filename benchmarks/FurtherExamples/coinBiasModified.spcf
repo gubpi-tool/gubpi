@@ -1,0 +1,33 @@
+# depth 200
+# discretization 0 1 0.05
+# epsilonVar 0.025
+
+# outputSplitProgress 0
+# outputCurrentPath 1
+# outputCurrentArea 0
+
+# This is the coinBiasModified example taken from the PSI repository.
+# Location: PSI/test/r2/coinBiasModified.psi
+# It agrees with coinBias, but uses a normal instead of a beta prior
+
+let flip = \p. if (sample uniform(0, 1) <= p) then 1 else 0 in
+
+let observedResults = [1,1,0,1,0] in
+
+let bias = sample truncnormal(0.5, 1, 0, 1) in # The original PSI program uses bounds [-1, 1] which makes no sense as bias needs to be between [0, 1]
+
+letrec iter xs =
+    match xs
+    | [] -> 0
+    | [x | xs] ->
+        let s = flip bias in
+        (if (s <= x) and (x <= s) then
+            0
+        else
+            score(0));
+        iter xs
+in
+
+iter observedResults;
+
+bias

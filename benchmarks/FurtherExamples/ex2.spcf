@@ -1,0 +1,24 @@
+# depth 200
+# discretization -0.1 2.9 1
+
+# Taken from the PSI repository
+# Location: PSI/text/fose-icse/ex2.psi
+
+let flip = \p. if (sample uniform(0, 1) <= p) then 1 else 0 in 
+
+let count = 0 in 
+
+let c1 = flip 0.5 in 
+let c2 = flip 0.5 in 
+
+let count = if (c1 > 0.5) then count + 1 else count in 
+
+let count = if (c2 > 0.5) then count + 1 else count in 
+
+
+(if (c1 < 0.5) and (c2 < 0.5) then 
+    score (0)
+else 
+    score(1))
+;
+count

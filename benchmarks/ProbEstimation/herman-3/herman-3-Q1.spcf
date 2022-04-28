@@ -1,0 +1,100 @@
+# depth 90
+# discretization -0.1 0.1 0.2
+
+# outputSplitProgress 0
+# outputCurrentPath 0
+# outputCurrentArea 0
+
+# Program: herman-3
+# Query: count < 1
+
+# [rb] this example is clearly broken 
+
+let p = 0.5 in 
+
+letrec f x =
+    let process1, process2, process3, count = x in
+
+    let oldprocess1 = process1 in
+    let oldprocess2 = process2 in 
+    let oldprocess3 = process3 in
+
+    let process1 = 
+        if (process1 <= oldprocess3)  then
+            if (process1 >= oldprocess3) then	     
+                if (sample uniform(0,1) <= p) then
+                    0.0
+                else
+                    1.0
+            else
+                oldprocess3
+        else
+            oldprocess3
+    in 
+
+    let process2 = 
+        if (process2 <= oldprocess1)  then
+            if (process2 >= oldprocess1) then	     
+                    if (sample uniform(0,1) <= p)  then
+                        0.0
+                    else
+                        1.0
+            else
+                oldprocess1
+        else
+            oldprocess1
+    in
+
+    let process3 =
+        if (process3 <= oldprocess2)  then
+            if (process3 >= oldprocess2) then	     
+                    if (sample uniform(0,1) <= p) then
+                        0.0
+                    else
+                        1.0
+            else
+                oldprocess2
+        else
+            oldprocess2
+    in 
+
+    let sum = process1 + process2 + process3 in 
+
+    let count = count + 1 in 
+
+
+    if (sum < 1.0) then
+        f (|process1, process2, process3, count|)
+    else
+        if (sum > 1.0) then
+            f (|process1, process2, process3, count|)
+        else
+            (|process1, process2, process3, count|)
+        
+in 
+
+let process1 = if (sample uniform(0, 1) <= p) then 0 else 1 in
+let process2 = if (sample uniform(0, 1) <= p) then 0 else 1 in
+let process3 = if (sample uniform(0, 1) <= p) then 0 else 1 in
+
+let count = 0 in 
+
+let sum = process1 + process2 + process3 in 
+
+let process1, process2, process3, count = 
+    if (sum < 1.0) then
+        f (|process1, process2, process3, count|)
+    else
+        if (sum > 1.0) then
+            f (|process1, process2, process3, count|)
+        else
+            (|process1, process2, process3, count|)
+in 
+
+
+if (count < 1) then 
+    0
+else 
+    1
+
+

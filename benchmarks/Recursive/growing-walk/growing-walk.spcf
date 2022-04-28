@@ -1,0 +1,21 @@
+# depth 45
+# discretization 0 5 0.1
+# epsilonScore 0.02
+
+# outputSplitProgress 0
+# outputCurrentPath 1
+# outputCurrentArea 1
+
+
+# This SPCF program models a one-side random geometric walk where the size of the step grows with number of steps already taken (called growing-walk).
+# To make the program statistical, we include an observation that the walk has traveled 3 units.
+
+
+letrec f x =
+    if (sample uniform(0,1) <= 0.5) then 0 else (x * sample uniform(0, 1)) + f(x+1)
+in
+
+let t = f 1 in
+
+score(pdfnormal(3.0, 1, t));
+t

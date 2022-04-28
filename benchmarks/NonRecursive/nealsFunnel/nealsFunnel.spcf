@@ -1,0 +1,25 @@
+# method boxes
+# depth 20
+# splits 100000
+# discretization -5 5 0.25
+# epsilonScore 0.1
+# epsilonVar 0.2
+
+# This is a SPCF program describing Neals funnel
+# For details see, e.g., https://mc-stan.org/docs/2_27/stan-users-guide/reparameterization-section.html#funnel.figure
+
+let x = sample normal(0, 3) in
+let y0 = sample normal(0, exp(x/2)) in
+# This and the following variables are unused and ignored.
+# The are part of the original model, however, and do affect HMC sampling,
+# so we include them for consistency.
+let y1 = sample normal(0, exp(x/2)) in
+let y2 = sample normal(0, exp(x/2)) in
+let y3 = sample normal(0, exp(x/2)) in
+let y4 = sample normal(0, exp(x/2)) in
+let y5 = sample normal(0, exp(x/2)) in
+let y6 = sample normal(0, exp(x/2)) in
+let y7 = sample normal(0, exp(x/2)) in
+let y8 = sample normal(0, exp(x/2)) in
+let y9 = sample normal(0, exp(x/2)) in
+y0

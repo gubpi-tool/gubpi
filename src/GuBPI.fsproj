@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="GlobalConstants.fs" />
+    <Compile Include="Interval.fs" />
+    <Compile Include="Util.fs" />
+    <Compile Include="UnionFind.fs" />
+    <Compile Include="SCC.fs" />
+    <Compile Include="LinearFunction.fs" />
+    <Compile Include="PrimitiveFunctions.fs" />
+    <Compile Include="PrimitiveDistributions.fs" />
+    <Compile Include="Expression.fs" />
+    <Compile Include="Parser.fs" />
+    <Compile Include="Typing.fs" />
+    <Compile Include="ConstraintGeneration.fs" />
+    <Compile Include="ConstraintSolver.fs" />
+    <Compile Include="VinciSystemCall.fs" />
+    <Compile Include="LinearOptimization.fs" />
+    <Compile Include="VolumeComputation.fs" />
+    <Compile Include="Evaluation.fs" />
+    <Compile Include="ScoreClosure.fs" />
+    <Compile Include="Splitting.fs" />
+    <Compile Include="AnalysePathBox.fs" />
+    <Compile Include="AnalysePathVolume.fs" />
+    <Compile Include="Analysis.fs" />
+    <Compile Include="Plotting.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Flips" Version="2.4.6" />
+    <PackageReference Include="FParsec" Version="1.1.1" />
+    <PackageReference Include="FSharp.Stats" Version="0.4.2" />
+    <PackageReference Include="FSharpx.Collections" Version="3.0.1" />
+    <PackageReference Include="XPlot.Plotly" Version="4.0.2" />
+  </ItemGroup>
+  <PropertyGroup Condition="">
+    <NoWarn>NU1605,NU1701</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup>
+    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
+  </PropertyGroup>
+</Project>

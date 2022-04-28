@@ -1,0 +1,25 @@
+# depth 200
+# discretization -0.1 0.1 0.2
+
+# outputSplitProgress 0
+# outputCurrentPath 1
+# outputCurrentArea 0
+
+# Taken from PSI repository
+# Location: PSI/test/gossip-sub1.psi 
+
+
+let flip = \p. if (sample uniform(0, 1) <= p) then 1 else 0 in 
+
+let N = 2 in 
+let numSteps = 1 in 
+
+let infectedi = 0 in
+let infectedii = flip 0.5 in
+
+let which = flip 0.5 in 
+
+let infectedi = if (which <= 0) and (0 <= which) then 1 else infectedi in
+let infectedii = if (which <= 1) and (1 <= which) then 1 else infectedii in 
+
+infectedii

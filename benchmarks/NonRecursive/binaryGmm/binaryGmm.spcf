@@ -1,0 +1,23 @@
+# depth 200
+# discretization -4 4 0.25
+# epsilonScore 0.03125
+# epsilonVar 0.0625
+
+
+# outputSplitProgress 0
+# outputCurrentPath 1
+# outputCurrentArea 1
+
+# This is a binary mixture model
+# The program is taken from
+#
+# Zhou, Gram-Hansen, Kohn, Rainforth, Yang, Wood. LF-PPL: A low-level first order probabilistic programming language for non-differentiable models. AISTATS 2019
+
+
+let data = [-2.0, -2.5, -1.7, -1.9, -2.2, 1.5, 2.2, 3.0, 1.2, 2.8] in
+let mu1 = sample truncnormal(0, 2, -4, 4) in
+let mu2 = sample truncnormal(0, 2, -4, 4) in
+letrec iterate xs = match xs
+  | [] -> mu1
+  | [x | xs] -> score(0.5 * (pdfnormal(mu1, 1, x) + pdfnormal(mu2, 1, x))); iterate xs
+in iterate data

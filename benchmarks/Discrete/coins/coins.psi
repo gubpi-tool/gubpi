@@ -1,0 +1,7 @@
+def main(){
+    c1 := flip(1/2);
+    c2 := flip(1/2);
+    bothHeads := c1 && c2;
+    observe(bothHeads == 0);
+    return c1; 
+}

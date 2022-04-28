@@ -1,0 +1,6 @@
+estimateProb(total_alice_bob < total_tom_sue)
+estimateProb(total_alice_bob < total_tom_sue);
+estimateProb(total_alice_sue < total_bob_tom);
+estimateProb(total_alice_sue < total_bob_tom);
+estimateProb(total_alice_sue < total_bob_sue);
+estimateProb(total_alice_sue < total_bob_sue)

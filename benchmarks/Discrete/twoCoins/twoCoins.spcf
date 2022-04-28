@@ -1,0 +1,19 @@
+# depth 200
+# discretization -0.1 0.1 0.2
+
+# Taken from PSI repository (modified)
+# Location: PSI/test/r2/twoCoinsTuple.psi (modified to only return one component of the tuple)
+
+let flip = \p. if (sample uniform(0, 1) <= p) then 1 else 0 in 
+
+let firstCoin = flip 0.5 in
+let secondCoin = flip 0.5 in 
+
+let bothHeads = if (firstCoin > 0.5) and (secondCoin > 0.5) then 1 else 0 in 
+
+(if (bothHeads > 0.5) then 
+    score(0)
+else 
+    0);
+
+firstCoin

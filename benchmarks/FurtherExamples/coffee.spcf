@@ -1,0 +1,9 @@
+
+# Taken from the PSI repository
+# Location PSI/test/ppaml/coffee.psi
+
+let x = sample normal(22, sqrt(10)) in
+
+(score pdfnormal(25, 1, x));
+
+x

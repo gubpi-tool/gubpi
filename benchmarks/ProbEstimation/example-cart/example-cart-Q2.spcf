@@ -1,0 +1,67 @@
+# depth 140
+# discretization -0.1 0.1 0.2
+
+# outputSplitProgress 0
+# outputCurrentPath 0
+# outputCurrentArea 0
+
+# Program: example-cart
+# Query: count >= 2
+
+
+letrec f x =
+    let cartX, cartY, steerX, steerY, count = x in 
+
+
+    let steerX, steerY =
+        if (steerX <= 0.6) then
+            (| 0.71 + sample uniform(-0.1, 0.1), 0.71 + sample uniform(-0.1, 0.1)|)
+        else 
+            if (steerX >= 0.8) then
+                (| 0.71 + sample uniform(-0.1, 0.1), 0.71 + sample uniform(-0.1, 0.1)|)
+            else 
+                (|steerX, steerY|)
+
+    in
+
+
+    let steerX, steerY =
+        if (steerY <= 0.6) then
+            (| 0.71 + sample uniform(-0.1, 0.1), 0.71 + sample uniform(-0.1, 0.1)|)
+        else 
+            if (steerY >= 0.8) then 
+                (| 0.71 + sample uniform(-0.1, 0.1), 0.71 + sample uniform(-0.1, 0.1)|)	
+            else 
+                (|steerX, steerY|)
+    in 
+
+    let cartX = cartX + steerX in 
+    let cartY = cartY + steerY in 
+
+    let steerX = steerX + sample uniform(-0.1, 0.1) in
+
+    let steerY = steerY + sample uniform(-0.1, 0.1) in
+
+
+    if (count >= 3) then 
+        count 
+    else 
+        if (cartX <= 1.0) and (cartX >= -1.0) and (cartY <= 1.0) and (cartY >= -1.) then 
+            count 
+        else 
+            f (|cartX, cartY, steerX, steerY, count + 1|)
+
+in 
+
+let cartX = sample uniform(-6.0,-5.0) in
+let cartY = sample uniform(-6.0, -5.0) in
+let steerX = sample uniform(-0.75,-0.6) in
+let steerY = sample uniform(-0.8,-0.7) in
+
+let countRes = f (|cartX, cartY, steerX, steerY, 0|) in
+
+if (countRes >= 2) then 
+    0 
+else 
+    1
+

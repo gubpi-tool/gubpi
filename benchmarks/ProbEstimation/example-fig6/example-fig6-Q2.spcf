@@ -1,0 +1,39 @@
+# depth 100
+# discretization -0.1 0.1 0.2
+
+# outputSplitProgress 0
+# outputCurrentPath 0
+# outputCurrentArea 0
+
+# Program: example-fig6
+# Query: c <= 3
+
+letrec f a =
+    let x, c = a in 
+
+    if (x <= 4.0) then
+
+        let x = x + sample uniform(-1.0,3.0) in
+        let c = 
+            let s = sample uniform(0, 1) in
+            if (s <= 0.33) then
+                c
+            else
+                if (s <= 0.66) then
+                    c + 1
+                else 
+                    c + 2
+        in
+        f (| x, c |)
+    else
+        (| x, c |)
+in
+
+let x = sample uniform(-1.0,3.0) in
+let x, c = f (|x, 0|) in
+
+
+if (c <= 2) then 
+    0
+else 
+    1

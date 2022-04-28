@@ -1,0 +1,35 @@
+# depth 200
+# discretization -0.1 0.1 0.2
+
+# outputSplitProgress 0
+# outputCurrentPath 1
+# outputCurrentArea 1
+
+# Taken from the PSI repository
+# Located art PSI/test/binfsymex/compare_fixed.psi
+# The original program is unbounded but PSI bounds the inner loop to 10 (so it can be handled by PSI)
+# This is a bounded version in SPCF (where the loop is bounded to 10)
+# The unbounded version is located in `comapre_fixedUnbounded.spcf`
+
+let flip = \p. if (sample uniform(0, 1) <= p) then 1 else 0 in
+
+letrec f n =
+
+    if n then
+        1 # true
+    else
+        let a = flip 0.5 in
+        let b = flip 0.5 in
+
+        if (a < b) then
+            1
+        else
+            if (b < a) then
+                0
+            else
+                # a and b agree
+                f(n-1)
+in
+
+
+f 10

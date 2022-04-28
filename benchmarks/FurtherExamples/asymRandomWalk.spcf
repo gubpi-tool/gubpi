@@ -1,0 +1,26 @@
+# depth 60
+# discretization -2 2 0.25
+# epsilonScore 0.02
+
+# outputSplitProgress 0
+# outputCurrentPath 1
+# outputCurrentArea 1
+
+# A asymmetric random walk starting at 0. 
+# In every step a uniform amount is traveled either to the left or right. Every third step is to the right and the remaining steps to the left
+
+
+letrec f x = 
+    if (sample uniform(0,1) <= 0.5) then 
+        sample uniform(-1, 1) 
+    else 
+        if (x >= 2) then 
+            sample uniform(-1, 0) + f(0)
+        else 
+            sample uniform(0, 1) + f(x+1)
+in 
+
+let t = f 0 in
+
+score(pdfnormal(0.0, 1, t));
+t

@@ -1,0 +1,13 @@
+estimateProb (count >= 10);
+estimateProb (count >= 8);
+estimateProb (count >= 6);
+estimateProb (count >= 4);
+estimateProb (count >= 2);
+estimateProb ((curValue - tgtValue) >= 12);
+estimateProb ((curValue - tgtValue) >= 10);
+estimateProb ((curValue - tgtValue) >= 8);
+estimateProb ((curValue - tgtValue) >= 5);
+estimateProb ((curValue - tgtValue) <= -5);
+estimateProb ((curValue - tgtValue) <= -8);
+estimateProb ((curValue - tgtValue) <= -10);
+estimateProb ((curValue - tgtValue) <= -12)

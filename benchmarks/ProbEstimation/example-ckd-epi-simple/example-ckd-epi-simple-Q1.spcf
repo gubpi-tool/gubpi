@@ -1,0 +1,95 @@
+# depth 100
+# discretization -0.1 0.1 0.2
+
+# outputSplitProgress 0
+# outputCurrentPath 0
+# outputCurrentArea 0
+
+# Program: example-ckd-epi-simple
+# Query: f1 <= 4.4 and f >= 4.6
+
+let logScr = sample uniform(-0.6, 0.6) in
+let age = sample uniform(30,80) in
+let isFemale = sample uniform(0,1.0) in
+let isAA = sample uniform(0,0.55) in
+let f = 4.94 in
+
+let f =
+   if (isFemale >= 0.5) then 
+      let k = -0.357 in
+      (if (logScr <= k) then 
+         f  - 0.329 * ( logScr - k )
+      else 
+         f - 1.209 * ( logScr - k ))
+      + 0.017
+   else
+      let k = -0.105 in
+      if (logScr <= k) then 
+         f  - 0.411 * (logScr - k)
+      else 
+         f - 1.209 * (logScr - k)
+in
+
+let f = 
+   if (isAA >= 0.5) then
+      f + 0.148
+   else  
+      f
+in
+
+let logScrErr = logScr + sample uniform(-0.1,0.1) in
+let ageErr = age + sample uniform(-1.0,1.0) in
+let flip1 = sample uniform(0,1) in
+
+let isFemaleErr =
+   if (flip1 <= 0.01) then 
+      1.0 - isFemale
+   else 		
+      isFemale
+in
+
+let flip2 = sample uniform(0,1) in
+let isAAErr =
+   if (flip2 <= 0.01) then 
+      1.0 - isAA
+   else
+      isAA
+in
+
+let f1 = 4.94 in
+let f1 = 
+   if (isFemaleErr >= 0.5) then 
+      let k = -0.357 in
+      (if (logScrErr <= k) then 
+         f1  - 0.329 * (logScrErr - k)
+      else 
+         f1 - 1.209 * (logScrErr - k))
+      + 0.017
+   else 
+      let k = -0.105 in
+      if (logScr <= k) then 
+         f1  - 0.411 * (logScrErr - k)
+      else 
+         f1 - 1.209 * (logScrErr - k)
+in
+
+let f1 =
+   if (isAAErr >= 0.5) then 
+      f1 + 0.148 
+   else
+      f1
+in
+
+
+if (f1 <= 4.4) and (f >= 4.6) then
+   0
+else 
+   1
+
+
+(*
+if (f1 >= 4.6) and (f <= 4.4) then
+   0
+else 
+   1
+*)

@@ -1,0 +1,29 @@
+# depth 200
+# discretization -0.1 0.1 0.2
+
+# outputSplitProgress 0
+# outputCurrentPath 1
+# outputCurrentArea 1
+
+# Taken from the PSI repository
+# Located art PSI/test/binfsymex/compare_fixed.psi
+# This is the unbounded version. 
+# The bounded version can be found at `comapre_fixedBounded.spcf`.
+
+let flip = \p. if (sample uniform(0, 1) <= p) then 1 else 0 in
+
+letrec f n =
+    let a = flip 0.5 in
+    let b = flip 0.5 in
+
+    if (a < b) then
+        1
+    else
+        if (b < a) then
+            0
+        else
+            # a and b agree
+            f 0
+in
+
+f 0

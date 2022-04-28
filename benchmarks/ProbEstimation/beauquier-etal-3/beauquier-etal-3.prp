@@ -1,0 +1,8 @@
+estimateProb(count < 1);
+estimateProb(sum < 0.5);
+estimateProb(count >= 1);
+estimateProb(count >= 5);
+estimateProb(count >= 10);
+estimateProb(count >= 20);
+estimateProb(count >= 50);
+estimateProb(count >= 100)

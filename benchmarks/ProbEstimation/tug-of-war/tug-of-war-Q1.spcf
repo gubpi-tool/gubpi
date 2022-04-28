@@ -1,0 +1,32 @@
+# depth 200
+# discretization -0.1 0.1 0.2
+# epsilonScore 0.025
+# epsilonVar 0.05
+
+# outputSplitProgress 0
+# outputCurrentPath 1
+# outputCurrentArea 0
+
+# Program: tug-of-war 
+# Query: total_a_s < total_b_t
+
+let alice_strength = if sample uniform(0, 1) - 0.5 then 10 else 5 in
+let alice_total = if sample uniform(0, 1) - 0.333 then 0.5*alice_strength else alice_strength in
+
+let bob_strength = if sample uniform(0, 1) - 0.5 then 10 else 5 in
+let bob_total = if sample uniform(0, 1) - 0.333 then 0.5*bob_strength else bob_strength in
+
+let tom_strength = if sample uniform(0, 1) - 0.5 then 10 else 5 in
+let tom_total = if sample uniform(0, 1) - 0.333 then 0.5*tom_strength else tom_strength in
+
+let sue_strength = if sample uniform(0, 1) - 0.5 then 10 else 5 in
+let sue_total = if sample uniform(0, 1) - 0.333 then 0.5*sue_strength else sue_strength in
+
+let total_alice_bob = alice_total + bob_total in
+let total_alice_tom = alice_total + tom_total in
+let total_alice_sue = alice_total + sue_total in
+let total_bob_tom   = bob_total + tom_total in
+let total_bob_sue   = bob_total + sue_total in
+let total_tom_sue   = tom_total + sue_total in
+
+if (total_alice_sue < total_bob_tom) then 1 else 0

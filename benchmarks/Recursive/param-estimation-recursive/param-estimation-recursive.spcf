@@ -1,0 +1,31 @@
+# depth 60
+# discretization 0 1 0.1
+# epsilonScore 0.02
+
+# outputSplitProgress 0
+# outputCurrentPath 1
+# outputCurrentArea 0
+
+# This SPCF program models the problem of estimating how biased a random walk is (called param-estimation-recursive).
+# We sample p from from uniform(0, 1) (the prior).
+# In the actual walk, we terminate with probability 0.5 in each step and otherwise move a uniform amount either to the left (with probability p) and to the right (with probability 1-p).
+# After termination, we observe that we are at position 1 (observed from a normal). What is the posterior on p?
+
+let p = sample uniform(0, 1) in
+
+letrec f x =
+    if (sample uniform(0,1) <= 0.5) then
+        0
+    else
+        let s = sample uniform(0, 1) in
+
+        if (sample uniform(0, 1) <= p) then
+            s + f x
+        else
+            -s + f x
+in
+
+let t = f 0 in
+
+score(pdfnormal(1.0, 1, t));
+p

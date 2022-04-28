@@ -1,0 +1,15 @@
+estimateProb(count >= 15)
+estimateProb(count >= 14);
+estimateProb(count >= 13);
+estimateProb(count >= 12);
+estimateProb(count >= 11);
+estimateProb(count >= 10);
+estimateProb(count >= 9);
+estimateProb(count >= 8);
+estimateProb(count >= 7);
+estimateProb(count >= 6);
+estimateProb(count >= 5);
+estimateProb(count >= 4);
+estimateProb(count >= 3);
+estimateProb(count >= 2);
+estimateProb(count >= 1)

@@ -1,0 +1,15 @@
+# depth 200
+# discretization -1 2 0.1
+# epsilonVar 0.05
+
+# outputSplitProgress 0
+# outputCurrentPath 1
+# outputCurrentArea 1
+
+# This is the max example taken from the PSI repository.
+# Location: PSI/test/fun/addFun/max.psi
+
+let x = sample normal(0, 1) in
+let y = sample normal(0, 1) in
+
+if (x > y) then x else y

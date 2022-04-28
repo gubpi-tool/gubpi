@@ -1,0 +1,32 @@
+# depth 200
+# discretization 0 1 0.1
+
+# outputSplitProgress 0
+# outputCurrentPath 1
+# outputCurrentArea 0
+
+# Taken from PSI repository
+# Location: PSI/test/coin_bias_small_nice.psi
+
+
+let flip = \p. if (sample uniform(0, 1) <= p) then 1 else 0 in 
+
+let p = sample uniform(0, 1) in
+
+let r = [1, 1, 0, 1, 0] in 
+
+letrec iter xs = 
+    match xs 
+    | [] -> 0
+    | [x | xs] -> 
+        let f = flip p in 
+        (if (x <= f) and (f <= x) then 
+            0
+        else
+            score(0)
+        );
+        iter xs
+in 
+iter r;
+
+p

@@ -1,0 +1,36 @@
+# depth 20
+# discretization 0.0 3.0 0.05
+# outputSplitProgress 0
+# outputCurrentPath 1
+# outputCurrentArea 0
+
+# This is a version add_uniform_with_counter_large taken from the PSI repository (translated into SPCF). 
+# The original programs is located in PSI/test/add_uniform_with_counter_large.psi
+# The version is bounded, i.e., the loop is fixed to only execute K times. 
+# However the bounding is erroneous (the correct bounded version is given in `../Recursive/add_uniform_with_counter_large/bounded`).
+
+letrec f n =
+    if n then
+        (|0, 0|)
+    else
+        let x, y = f (n-1) in 
+
+        let cur = sample uniform(0,1) in
+
+        if (cur < 0.5) then 
+            (|x+cur, y+1|)
+        else
+            (|x+cur, y|)
+in 
+
+let K = 3 in
+
+let x, y = f K in 
+
+(if (y <= 2) and (2 <= y) then 
+    0
+else
+    score(0)
+);
+
+x

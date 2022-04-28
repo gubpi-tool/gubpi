@@ -1,0 +1,26 @@
+# depth 60
+# discretization 0.0 3.0 0.05
+
+# outputSplitProgress 0
+# outputCurrentPath 1
+# outputCurrentArea 0
+
+
+# This is the UNBOUNDED version add_uniform_with_counter_large taken from the PSI repository (translated into SPCF).
+# The original programs is located in PSI/test/add_uniform_with_counter_large.psi
+
+letrec f y =
+    if (y <= 2) and (2 <= y) then
+        0
+    else
+        let cur = sample uniform(0,1) in
+
+        if (cur < 0.5) then
+            cur + f (y + 1)
+        else
+            cur + f y
+in
+
+let x = f 0 in
+
+x
