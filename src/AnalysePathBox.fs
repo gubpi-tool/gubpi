@@ -511,8 +511,9 @@ let computeHistogramForPath (p: ProgramPath) (config: Hyperparameters) =
         let loBin = max 0 loBin
         let hiBin = min (numBins - 1) hiBin
 
-        for i in loBin .. hiBin do
-            result.Histogram.[i] <- result.Histogram.[i] + zeroTo integral.hi
+        if not (loBin = hiBin) then
+          for i in loBin .. hiBin do
+              result.Histogram.[i] <- result.Histogram.[i] + zeroTo integral.hi
 
     printfn $"{result}"
 
