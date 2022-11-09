@@ -1,0 +1,14 @@
+# depth 100
+# discretization -50 50 5
+# epsilonScore 0.01
+# epsilonVar 0.01
+
+# Tests the handling of small likelihoods and weights
+
+let data =  [-23, 26, 38, 3, 39, 20, 25, 11, -77, 82] in
+let mu = sample uniform(-50, 50) in
+let sigma = 3 in
+letrec iterate xs = match xs
+  | [] -> mu
+  | [x | xs] -> score(pdfnormal(mu, sigma, x)); iterate xs
+in iterate data

@@ -12,6 +12,7 @@ open System
 open System.IO
 
 open Interval
+open Weight
 open Util
 open Parser
 open Typing
@@ -116,18 +117,18 @@ let main argv =
                     |> Async.RunSynchronously
 
                 let bounds =
-                    Array.fold (fun s (x, _) -> Array.map2 (+) x s) (Array.create dd.NumberOfBins Interval.Zero) results
+                    Array.fold (fun s (x, _) -> Array.map2 (+) x s) (Array.create dd.NumberOfBins WeightInterval.Zero) results
 
                 let outerBounds =
-                    Array.fold (fun s (_, x) -> x + s) Interval.Zero results
+                    Array.fold (fun s (_, x) -> x + s) WeightInterval.Zero results
 
                 bounds, outerBounds
             else
                 // Perform the analysis sequentially
-                let mutable outerBounds = Interval.Zero
+                let mutable outerBounds = WeightInterval.Zero
 
                 let mutable bounds =
-                    Array.create dd.NumberOfBins Interval.Zero
+                    Array.create dd.NumberOfBins WeightInterval.Zero
 
                 let mutable currentCount = 0
 
@@ -170,10 +171,10 @@ let main argv =
 
         // We plot unbounded bounds by mapping them to -1 (for visualization)
         let removeInfty =
-            Array.map (fun r -> if Double.IsFinite r then r else -1.0)
+            Array.map (fun (r: Weight) -> if r.isFinite then toDouble r else -1.0)
 
         let scale =
-            Array.map (fun (x: double) -> x / dd.StepSize)
+            Array.map (fun (x: Weight) -> x / Weight.From(dd.StepSize))
 
         // Plot the unnormalized bounds to file {fileName}-unnorm.html
         Plotting.plotTwo
@@ -188,10 +189,10 @@ let main argv =
             for i = 0 to bounds.Length - 1 do
                 let x = dd.Start + dd.StepSize * double i
                 let x' = min(dd.Start + dd.StepSize * double (i + 1)) dd.End
-                let b = bounds.[i]
+                let b = bounds.[i].toInterval
                 fprintfn file $"[{x:G9}, {x':G9}]: [{b.lo:G9}, {b.hi:G9}]"
-
-            fprintfn file $"outside: [{outerBounds.lo:G9}, {outerBounds.hi:G9}]")
+            let outside = outerBounds.toInterval
+            fprintfn file $"outside: [{outside.lo:G9}, {outside.hi:G9}]")
 
         // Compute interval approximation of the normalizing constant and compute the normalized Bounds
 
@@ -201,7 +202,7 @@ let main argv =
         let normConstantEstimate = Array.sum bounds + outerBounds
 
         // If the program contains no score, the normConst is 1 (We assume the program to be AST)
-        let normConstant = if programContainsScore then normConstantEstimate else Interval.One
+        let normConstant = if programContainsScore then normConstantEstimate else WeightInterval.One
 
         // Compute the normalized bounds
         let normalizedBounds =
@@ -213,10 +214,10 @@ let main argv =
             for i = 0 to bounds.Length - 1 do
                 let x = dd.Start + dd.StepSize * double i
                 let x' = min(dd.Start + dd.StepSize * double (i + 1)) dd.End
-                let b = normalizedBounds.[i]
+                let b = normalizedBounds.[i].toInterval
                 fprintfn file $"[{x:G9}, {x':G9}]: [{b.lo:G9}, {b.hi:G9}]"
-
-            fprintfn file $"outside: [{normalizedOuterBounds.lo:G9}, {normalizedOuterBounds.hi:G9}]")
+            let outside = normalizedOuterBounds.toInterval
+            fprintfn file $"outside: [{outside.lo:G9}, {outside.hi:G9}]")
 
         // Plot the normalized bounds to {fileName}-norm.html
         Plotting.plotTwo
@@ -230,8 +231,10 @@ let main argv =
             |> removeInfty)
             $"output/{fileName}-norm.html"
 
+        let normConstantInterval = normConstant.toInterval
         if programContainsScore then
-            printfn $"Normalizing constant: {normConstant.lo} <= Z <= {normConstant.hi}"
+            printfn $"Normalizing constant: {normConstantInterval.lo} <= Z <= {normConstantInterval.hi}"
+            printfn $"Log of normalizing constant: {normConstant.lo.log} <= ln Z <= {normConstant.hi.log}"
         else
             printfn $"The program contains no score, so the normalizing constant is 1. The computed bounds inferred give: {normConstantEstimate.lo} <= Z <= {normConstantEstimate.hi}"
 

@@ -6,6 +6,7 @@
   <ItemGroup>
     <Compile Include="GlobalConstants.fs" />
     <Compile Include="Interval.fs" />
+    <Compile Include="Weight.fs" />
     <Compile Include="Util.fs" />
     <Compile Include="UnionFind.fs" />
     <Compile Include="SCC.fs" />

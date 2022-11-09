@@ -14,6 +14,7 @@ open System
 open FSharpx.Collections
 
 open Interval
+open Weight
 open Util
 open Expression
 open PrimitiveDistributions
@@ -35,13 +36,13 @@ type Trilean =
 
 
 type FragmentResult =
-    { mutable NormConst: Interval }
+    { mutable NormConst: WeightInterval }
 
 type PathResult =
-    { mutable NormConst: Interval
+    { mutable NormConst: WeightInterval
       mutable Expectation: Interval
-      mutable Histogram: Interval []
-      mutable Outside: Interval }
+      mutable Histogram: WeightInterval []
+      mutable Outside: WeightInterval }
 
 /// Checks if a given guard is satfied on a box
 let private satisfiesGuard (b: Box) (g: Guard) =
@@ -123,7 +124,7 @@ type private BoxResultFragment =
       logweight: Interval
       splitDepth: int }
 
-    member this.Integral: Interval = this.LogIntegral.Exp()
+    member this.Integral: WeightInterval = WeightInterval.Exp(this.LogIntegral)
     member this.LogIntegral: Interval = this.logweight + this.logvolume
 
     interface IComparable with
@@ -151,7 +152,7 @@ type private BoxResultPath =
     { resFragment: BoxResultFragment;
       value: Interval}
 
-    member this.Integral: Interval = this.resFragment.Integral
+    member this.Integral: WeightInterval = this.resFragment.Integral
 
     member this.box = this.resFragment.box
     member this.priority = this.resFragment.priority
@@ -269,11 +270,11 @@ let private findBestSplitFragment (p: PathFragment) (boxResult: BoxResultFragmen
             evaluateBoxFragment p box2 (boxResult.splitDepth + 1)
 
         let expectationBefore =
-            makeFiniteIv (boxResult.Integral)
+            makeFiniteIv (boxResult.Integral.toInterval)
 
         let expectationAfter =
             makeFiniteIv (
-                box1Result.Integral + box2Result.Integral
+                box1Result.Integral.toInterval + box2Result.Integral.toInterval
             )
 
         let reduction =
@@ -328,12 +329,12 @@ let private findBestSplitPath (p: ProgramPath) (boxResult: BoxResultPath) : int 
             evaluateBoxPath p box2 (boxResult.splitDepth + 1)
 
         let expectationBefore =
-            makeFiniteIv (boxResult.value * boxResult.Integral)
+            makeFiniteIv (boxResult.value * boxResult.Integral.toInterval)
 
         let expectationAfter =
             makeFiniteIv (
-                box1Result.value * box1Result.Integral
-                + box2Result.value * box2Result.Integral
+                box1Result.value * box1Result.Integral.toInterval
+                + box2Result.value * box2Result.Integral.toInterval
             )
 
         let reduction =
@@ -463,10 +464,10 @@ let computeHistogramForPath (p: ProgramPath) (config: Hyperparameters) =
         numSplits <- numSplits - 1
 
     let mutable result =
-        { NormConst = Interval.Zero
+        { NormConst = WeightInterval.Zero
           Expectation = Interval.Zero
-          Histogram = Array.create config.discretization.NumberOfBins Interval.Zero
-          Outside = Interval.Zero }
+          Histogram = Array.create config.discretization.NumberOfBins WeightInterval.Zero
+          Outside = WeightInterval.Zero }
 
     printfn $"\nsummarizing results from interval traces..."
 
@@ -478,7 +479,7 @@ let computeHistogramForPath (p: ProgramPath) (config: Hyperparameters) =
 
         result.NormConst <- result.NormConst + integral
 
-        result.Expectation <- result.Expectation + integral * box.value
+        result.Expectation <- result.Expectation + integral.toInterval * box.value
 
         let numBins = config.discretization.NumberOfBins
 
@@ -507,20 +508,20 @@ let computeHistogramForPath (p: ProgramPath) (config: Hyperparameters) =
         else
             // The value interval spans more than one bin, so we cannot improve the lower bound and only update the upper bound:
             if loOut || hiOut then
-                result.Outside <- result.Outside + zeroTo integral.hi
+                result.Outside <- result.Outside + weightUpTo integral.hi
 
             let loBin = max 0 loBin
             let hiBin = min (numBins - 1) hiBin
 
             for i in loBin .. hiBin do
-                result.Histogram.[i] <- result.Histogram.[i] + zeroTo integral.hi
+                result.Histogram.[i] <- result.Histogram.[i] + weightUpTo integral.hi
 
     printfn $"{result}"
 
     result.Histogram, result.Outside
 
 /// Compute bounds on the norm constant of a path fragment by repeatedly splitting boxes
-let computeBoundsForFragment (p: PathFragment) (config: Hyperparameters) : Interval =
+let computeBoundsForFragment (p: PathFragment) (config: Hyperparameters) : WeightInterval =
     let p = normalizeFragment p
 
     let varCount = Set.count p.UsedVars
@@ -561,7 +562,7 @@ let computeBoundsForFragment (p: PathFragment) (config: Hyperparameters) : Inter
         numSplits <- numSplits - 1
 
     let mutable result =
-        { FragmentResult.NormConst = Interval.Zero }
+        { FragmentResult.NormConst = WeightInterval.Zero }
 
     printfn $"\nsummarizing results from interval traces..."
 

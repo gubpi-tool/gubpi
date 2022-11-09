@@ -13,6 +13,7 @@ module AnalysePathVolume
 open System
 
 open Interval
+open Weight
 open Util
 open PrimitiveDistributions
 open LinearFunction
@@ -29,8 +30,8 @@ let private approximateIntegral
     (epsilonScore: double)
     (epsilonVar: double)
     =
-        
-    // Convert all symbolic score functions to score closures by identifying large linear fragments within them  
+
+    // Convert all symbolic score functions to score closures by identifying large linear fragments within them
     let scoreClosures = List.map toScoreClosure scoreValues
 
     // Extract all linear Functions used within the scores to avoid duplicates
@@ -39,7 +40,7 @@ let private approximateIntegral
         |> List.collect (fun x -> x.LinearParts)
         |> set
 
-    let mutable bound = Interval.Zero
+    let mutable bound = WeightInterval.Zero
 
     // Split the sample variables if needed.
     // Splitting.splitVarsViaDAG returns a list of boxes (splits) that discretize the sample outcome
@@ -61,7 +62,7 @@ let private approximateIntegral
         currentVarSplit <- currentVarSplit + 1
 
         // Based on the current splits, compute the bounds on the pdf of the distribution each variable is sampled from
-        let pdf = computePdfBounds varMap split
+        let pdf = computePdfBounds varMap split |> toWeightInterval
 
         // Split each of the linear parts appearing in the score closures (each element in linearFunctions) into smaller blocks to approximate the integral
         let boundsForLinearFunctions =
@@ -69,7 +70,7 @@ let private approximateIntegral
             |> Seq.toList
 
         let mutable currentScoreSplit = 0
-        
+
 
         for bounds in boundsForLinearFunctions do
             currentScoreSplit <- currentScoreSplit + 1
@@ -100,8 +101,8 @@ let private approximateIntegral
             // --------------------- End - Handle Prints ----------------------
 
             let mutable guards = conditions
-            
-            let mutable scoreFactorGuard = Interval.One
+
+            let mutable scoreFactorGuard = WeightInterval.One
 
             // As each linear part appearing in the score closure is bounded by an interval in bounds, we compute bounds on the value of the score within the current bounds.
             for sc in scoreClosures do
@@ -110,7 +111,7 @@ let private approximateIntegral
                     |> List.map (fun x -> Map.find x bounds |> fst)
                     |> sc.BoundNonLinearPart
 
-                scoreFactorGuard <- scoreFactorGuard * w
+                scoreFactorGuard <- scoreFactorGuard * toWeightInterval w
 
             for (lf, (iv, isImportantSplit)) in Map.toSeq bounds do
                 // Add the bounds on each linear function to the current polytope (only if they are finite)
@@ -136,7 +137,7 @@ let private approximateIntegral
 
             // Before computing the volume using VINCI, we check if the polytope is non-empty. This is mich cheaper to compute
             if LinearOptimization.isFeasible guards split then
-                
+
                 // Compute the volume using VINCI
                 let localVol =
                     VolumeComputation.computeVolumeDirectly guards split
@@ -160,14 +161,13 @@ let private approximateIntegral
                         // If e.g., sample variable \alpha_i is sampled from a normal and bound to [-infty, 0] in split, we can infer the cdf(0)-cdf(infty) to still obtain sound bounds on the volume
                         // Even though the volume of the polytope might be unbounded
                         // In most cases (in particular if all samples are from a uniform), this case never occurs
-                        let cdfBounds = split |> Map.toSeq |> Seq.map boundCdf
-                        let cdfBoxBounds = Seq.fold (*) Interval.One cdfBounds
+                        let cdfBounds = split |> Map.toSeq |> Seq.map boundCdf |> Seq.map toWeightInterval
+                        let cdfBoxBounds = Seq.fold (*) WeightInterval.One cdfBounds
 
                         cdfBoxBounds * scoreFactorGuard
-                        |> ensureNonnegative
                     else
                         // If the volume is finite, we just multiple the volume times the bounds on score values and the pdfs of the sampled values
-                        precisely localVol * scoreFactorGuard * pdf
+                        preciseWeight (toWeight localVol) * scoreFactorGuard * pdf
 
                 bound <- bound + local
 
@@ -239,7 +239,7 @@ let private approximateIntegralPlus
         | LT -> v.lo >= g.Threshold
         | GEQ -> v.hi < g.Threshold
         | GT -> v.hi <= g.Threshold
-        
+
     /// Checks if the Guard is always sat, i.e., it can be eliminated from the program path
     let isGuardAlwaysSat (g: LinearInequality) =
         let v = g.Function.EvalWithGivenBounds bounds
@@ -251,23 +251,23 @@ let private approximateIntegralPlus
         | GT -> v.lo > g.Threshold
 
     /// Computes the integral for the given set of Linear Inequality
-    let computeRes (l: list<LinearInequality>) : Interval =
+    let computeRes (l: list<LinearInequality>) : WeightInterval =
         if List.exists isGuardAlwaysUnsat l then
-            Interval.Zero
+            WeightInterval.Zero
         else
             // Filter out Guards that are always sat
             let guards = List.filter (isGuardAlwaysSat >> not) l
 
             if List.exists (fun (x: LinearInequality) -> not (x.isFinite)) guards then
                 // There exists a linear inequality with a non-finite constant. We can thus only use this as an upper bound and set the lower bound to 0
-                
+
                 let remainingGuards =
                     List.filter (fun (x: LinearInequality) -> x.isFinite) guards
 
                 let res =
                     approximateIntegral remainingGuards varMap scoreValues epsilonScore epsilonVar
 
-                preciseInterval 0.0 res.hi
+                weightUpTo res.hi
             else
                 // All constants are finite. Proceed to approximateIntegral.
                 let res =
@@ -291,8 +291,8 @@ let private approximateIntegralPlus
         // We compute the lower bound on the smaller area and the upper bound on the larger area.
         let smallerBounds = computeRes smallerVolumeConditions
         let largerBounds = computeRes largerVolumeConditions
-        
-        preciseInterval smallerBounds.lo largerBounds.hi
+
+        preciseWeightInterval smallerBounds.lo largerBounds.hi
 
 
 /// Compute lower and upper bounds on the denotation of the symbolic path p to be within range.
