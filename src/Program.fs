@@ -189,9 +189,9 @@ let main argv =
                 let x = dd.Start + dd.StepSize * double i
                 let x' = min(dd.Start + dd.StepSize * double (i + 1)) dd.End
                 let b = bounds.[i]
-                fprintfn file $"[{x}, {x'}]: [{b.lo}, {b.hi}]"
+                fprintfn file $"[{x:G9}, {x':G9}]: [{b.lo:G9}, {b.hi:G9}]"
 
-            fprintfn file $"outside: [{outerBounds.lo}, {outerBounds.hi}]")
+            fprintfn file $"outside: [{outerBounds.lo:G9}, {outerBounds.hi:G9}]")
 
         // Compute interval approximation of the normalizing constant and compute the normalized Bounds
 
@@ -214,9 +214,9 @@ let main argv =
                 let x = dd.Start + dd.StepSize * double i
                 let x' = min(dd.Start + dd.StepSize * double (i + 1)) dd.End
                 let b = normalizedBounds.[i]
-                fprintfn file $"[{x}, {x'}]: [{b.lo}, {b.hi}]"
+                fprintfn file $"[{x:G9}, {x':G9}]: [{b.lo:G9}, {b.hi:G9}]"
 
-            fprintfn file $"outside: [{normalizedOuterBounds.lo}, {normalizedOuterBounds.hi}]")
+            fprintfn file $"outside: [{normalizedOuterBounds.lo:G9}, {normalizedOuterBounds.hi:G9}]")
 
         // Plot the normalized bounds to {fileName}-norm.html
         Plotting.plotTwo
