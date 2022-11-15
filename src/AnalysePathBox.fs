@@ -125,7 +125,7 @@ type private BoxResultFragment =
 
     member this.Integral: Interval = this.LogIntegral.Exp()
     member this.LogIntegral: Interval = this.logweight + this.logvolume
-    
+
     interface IComparable with
         member this.CompareTo other =
             match other with
@@ -138,11 +138,11 @@ type private BoxResultFragment =
                     0
             | _ -> -1
 
-    override this.GetHashCode() = 0 
+    override this.GetHashCode() = 0
 
     override this.Equals(p) =
         match p with
-        | :? BoxResultFragment as b -> 
+        | :? BoxResultFragment as b ->
             this.box = b.box && this.priority = b.priority && this.logvolume = b.logvolume && this.logweight = b.logweight && this.splitDepth = b.splitDepth
         | _ -> false
 
@@ -171,14 +171,14 @@ type private BoxResultPath =
                     0
             | _ -> -1
 
-    override this.GetHashCode() = 0 
+    override this.GetHashCode() = 0
 
     override this.Equals(p) =
         match p with
-            | :? BoxResultPath as b -> 
+            | :? BoxResultPath as b ->
                 this.resFragment = b.resFragment && this.value = b.value
             | _ -> false
-    
+
 /// Computes the (log) volume of a box, i.e. the integral of the density of each sample over the box
 let private logVolume (p: PathFragment) (box: Box) =
     let logProbMass (varId: int) (symDist: SymbolicDistribution) =
@@ -247,9 +247,9 @@ let private evaluateBoxPath (p: ProgramPath) (box: Box) (splitDepth: int) =
 
     let resFragment = evaluateBoxFragment p.Fragment box splitDepth
 
-    { 
+    {
         resFragment = resFragment;
-        value = value 
+        value = value
     }
 
 /// Find the best split of a given box over a program fragment
@@ -393,7 +393,7 @@ let private normalizeFragment (p: PathFragment) =
         PathFragment.SampleDistributions = newDistMap
         PathFragment.ScoreValues = scoreValues
     }
-   
+
 /// Normalizes a path to use sample vars in 0...n-1
 let private normalizePath (p: ProgramPath) =
     let usedVars = p.UsedVars
@@ -501,18 +501,19 @@ let computeHistogramForPath (p: ProgramPath) (config: Hyperparameters) =
                 / config.discretization.StepSize
             )
 
-        if not loOut && not hiOut then
-            if loBin = hiBin then
-                result.Histogram.[loBin] <- result.Histogram.[loBin] + precisely integral.lo
+        if not loOut && not hiOut && loBin = hiBin then
+            // The value interval is contained in one bin, so only update that bin:
+            result.Histogram.[loBin] <- result.Histogram.[loBin] + integral
+        else
+            // The value interval spans more than one bin, so we cannot improve the lower bound and only update the upper bound:
+            if loOut || hiOut then
+                result.Outside <- result.Outside + zeroTo integral.hi
 
-        if loOut || hiOut then
-            result.Outside <- result.Outside + zeroTo integral.hi
+            let loBin = max 0 loBin
+            let hiBin = min (numBins - 1) hiBin
 
-        let loBin = max 0 loBin
-        let hiBin = min (numBins - 1) hiBin
-
-        for i in loBin .. hiBin do
-            result.Histogram.[i] <- result.Histogram.[i] + zeroTo integral.hi
+            for i in loBin .. hiBin do
+                result.Histogram.[i] <- result.Histogram.[i] + zeroTo integral.hi
 
     printfn $"{result}"
 
@@ -570,7 +571,7 @@ let computeBoundsForFragment (p: PathFragment) (config: Hyperparameters) : Inter
 
         let integral = box.Integral
         result.NormConst <- result.NormConst + integral
-        
+
     printfn $"{result}"
 
     result.NormConst
