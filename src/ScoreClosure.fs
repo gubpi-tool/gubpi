@@ -53,34 +53,57 @@ let rec toScoreClosure (V: SymbolicValue) =
     | None ->
         // The function could not be translated to a linear function directly. Match on the top operation
         match V with
-        | SVFun (PDF_NORMAL, [| SVCon mean; SVCon sigma; W |]) | SVFun (PDF_NORMAL, [| W; SVCon sigma; SVCon mean |]) ->
-            // For the normal function, we assume that either the mean or the argument is constant.
-            // We then convert the argument to a score closure.
-            // Given bounds on the argument, BoundNonLinearPart, the computes lower and upper approximations on the value of the normal pdf on that interval
+        | SVFun (PDF_NORMAL, [| SVCon mean; sigma; W |]) | SVFun (PDF_NORMAL, [| W; sigma; SVCon mean |]) -> 
+            // We assume that at least one the mean or the argument is a constant. The remaning arguments may be arbitrary symbolic values
 
-            let recRes = toScoreClosure W
+            // Convert the two symbolic values to score closures
+            let scoreClosureSigma = toScoreClosure sigma 
+            let scoreClosureW = toScoreClosure W
 
-            // The lower bound on the pdf normal is taken at one of the ends of the interval
-            let normLowerApprox =
-                fun x y -> min (pdfNormal (mean, sigma, x)) (pdfNormal (mean, sigma, y))
+            let lowerBound (sigma_l, sigma_u) (w_l, w_u) =
+                // The smallest value is attained at the position in the w-interval that is furthest aways from the mean
+                let pointFurthestToMean = if abs(w_l - mean) > abs(w_u - mean) then w_l else w_u
 
-            // The upper bound on the pdf normal is taken at either one of the ends of the interval, or at the mean (if included in the interval)
-            let normUpperApprox x y =
-                if x <= mean && mean <= y then
-                    pdfNormal (mean, sigma, mean)
+                // The function \sigma -> pdfnormal(mean, sigma, pointClosedToMean) is monotone increasing on (0, t) and monotine decreasing on (t, \infty) for some value t (which we can compute but do not need here)
+                // The minimum is thus attained at one of the two endpoints of the sigma-interval
+                min (pdfNormal (mean, sigma_l, pointFurthestToMean)) (pdfNormal (mean, sigma_u, pointFurthestToMean))
+
+            let upperBound (sigma_l, sigma_u) (w_l, w_u) =
+                if w_l <= mean && mean <= w_u then 
+                    // The mean is included in the w-interval. The maximal value is thus attained at that mean with the smallest possible sigma
+                    pdfNormal (mean, sigma_l, mean)
                 else
-                    max (pdfNormal (mean, sigma, x)) (pdfNormal (mean, sigma, y))
+                    let pointClosedToMean = if w_u < mean then w_u else w_l
+                    // We can assume that pointClosedToMean <> mean 
+                    // We know that the maximal value is attained at pointClosedToMean
+
+                    // Compute the value of sigma such that pdfnormal(mean, sigma, pointClosedToMean) is maximal
+                    let globalSigmaMax = abs (mean - pointClosedToMean)
+
+                    // Note: The function \sigma -> pdfnormal(mean, sigma, pointClosedToMean) is monotone increasing on (0, globalSigmaMax) and monote decreasing on (globalSigmaMax, \infty)
+                    if sigma_l <= globalSigmaMax && globalSigmaMax <= sigma_u then 
+                        // The value for sigma that maximises pdfnormal(mean, sigma, pointClosedToMean) is contained in the sigma-interval
+                        pdfNormal (mean, globalSigmaMax, pointClosedToMean) 
+                    else 
+                        // The max value is attained at one of the two endpoint of the sigma-interval
+                        max (pdfNormal (mean, sigma_l, pointClosedToMean) ) (pdfNormal (mean, sigma_u, pointClosedToMean) )
 
 
-            let bounds args =
-                let (l, u) = (recRes.BoundNonLinearPart args).ToPair
-                let lower = normLowerApprox l u
-                let upper = normUpperApprox l u
+            let bounds (args : list<Interval>) =
+                // Separete the bounds used by sigma and W
+                let argsForSigma = args[0..scoreClosureSigma.LinearParts.Length - 1]
+                let argsForW = args[scoreClosureSigma.LinearParts.Length..]
+
+                let sigmaBounds = (scoreClosureSigma.BoundNonLinearPart argsForSigma).ToPair
+
+                let wBounds = (scoreClosureW.BoundNonLinearPart argsForW).ToPair
+
+                let lower = lowerBound sigmaBounds wBounds
+                let upper = upperBound sigmaBounds wBounds
                 itv lower upper |> ensureNonnegative
 
-            { LinearParts = recRes.LinearParts
+            { LinearParts = scoreClosureSigma.LinearParts @ scoreClosureW.LinearParts
               BoundNonLinearPart = bounds }
-
 
         | SVFun (ADD, [| W1; W2 |]) ->
             // For addition, we convert both parts to a scoreClosure, take the union of the linear parts of both and BoundNonLinearPart just adds the bounds for each size
