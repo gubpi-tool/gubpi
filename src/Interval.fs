@@ -176,6 +176,11 @@ type Interval =
     member inline this.StrictlyOverlaps(other: Interval) : bool =
         this.lo < other.hi && other.lo < this.hi
 
+    member inline this.Abs() : Interval =
+        let lo = if this.lo <= 0.0 && 0.0 <= this.hi then 0.0 else min (abs this.lo) (abs this.hi)
+        let hi = max (abs this.lo) (abs this.hi)
+        Interval(lo, hi)
+
 let allReals = Interval(-infinity, infinity)
 let unitInterval = Interval(0.0, 1.0, false)
 
