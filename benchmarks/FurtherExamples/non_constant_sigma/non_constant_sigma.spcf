@@ -1,0 +1,13 @@
+# depth 500
+# discretization 0 20 0.1
+# epsilonScore 0.005
+
+let data = [-23, 26, 38, 3] in
+let mu = sample uniform(-20, 20) in 
+let sigma = sample uniform(1.9999, 2.0001) in 
+letrec iterate xs = 
+    match xs
+    | [] -> mu 
+    | [x | xs] -> score(pdfnormal(mu, sigma, x)); iterate xs 
+in 
+iterate data
