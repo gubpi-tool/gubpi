@@ -115,10 +115,48 @@ let pdfNormal ((mean, sigma, x): double * double * double) : double =
         failwith "Normal distribution with infinite mean or variance"
 
 let pdfNormalBounds (mean: Interval) (sigma: Interval) (x: Interval) =
-    (point (sqrt (2.0 * Math.PI)) * sigma).Inverse()
-    * (- (x - mean).Squared()
-       / (precisely 2.0 * sigma.Squared()))
-        .Exp()
+    // Instead of computing bounds by evaluating the pdfnormal in interval arithmatic, we compute more precise bounds by leveraging the structure of the normal PDF
+
+    // We take the abs of sigma
+    let sigma = sigma.Abs()
+
+    let lowerBound = 
+        // The smallest value of pdfnormal(mean, sigma, x) is obtained at those values (mean, x) that are furthest apart from each other 
+        // Find a pair (mean, x) within the interval bounds that is furthest away from each other
+        let mean_furthest, x_furthest = 
+            [(mean.lo, x.lo); (mean.lo, x.hi); (mean.hi, x.lo); (mean.hi, x.lo) ]
+            |> List.maxBy (fun (x, y) -> abs (x - y))
+
+        // The function \sigma -> pdfnormal(furthest, sigma, x_furthest) is monotonically increasing on (0, t) and monotonically decreasing on (t, \infty) for some value t (which we can compute but do not need here)
+        // The minimum is thus attained at one of the two endpoints of the sigma-interval (as we have ensured that sigma.lo >= 0.0 by taking the abs)
+        min (pdfNormal (mean_furthest, sigma.lo, x_furthest)) (pdfNormal (mean_furthest, sigma.hi, x_furthest))
+
+    let upperBound =
+        // The largest value of pdfnormal(mean, sigma, x) is obtained at those values (mean, x) that are closest together
+        // Find a pair (mean, x) within the interval bounds that are as close together as possible (possibly identical)
+        let mean_closest, x_closest = 
+            match Interval.tryIntersect mean x with 
+            | Some i -> 
+                // A point shared in both intervals (distance = 0)
+                i.lo, i.lo
+            | None -> 
+                // The closest values are either (mean.lo, x.hi) or (mean.hi, x.lo)
+                [(mean.lo, x.hi); (mean.hi, x.lo)]
+                |> List.minBy (fun (x, y) -> abs (x - y))
+
+        // For the given (mean_closest, x_closest) we can easly compute the sigma such that pdfnormal(mean_closest, sigma, x_closest) is maximal using simple calculus
+        let optimalSigma = abs (mean_closest - x_closest)
+
+        // Note: The function \sigma -> pdfnormal(mean_closest, sigma, x_closest) is monotonically increasing on (0, optimalSigma) and monotonically decreasing on (optimalSigma, \infty)
+        if sigma.lo <= optimalSigma && optimalSigma <= sigma.hi then 
+            // optimalSigma is conatained in the interval bounds for sigma
+            pdfNormal (mean_closest, optimalSigma, x_closest) 
+        else 
+            // The max value is attained at one of the two endpoint of the sigma-interval (as we have ensured that sigma.lo >= 0.0 by taking the abs)
+            max (pdfNormal (mean_closest, sigma.lo, x_closest) ) (pdfNormal (mean_closest, sigma.hi, x_closest) )
+
+    Interval(lowerBound, upperBound)
+
 
 let PdfNormal =
     { Name = "pdfnormal"

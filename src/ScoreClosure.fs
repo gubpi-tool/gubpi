@@ -53,61 +53,26 @@ let rec toScoreClosure (V: SymbolicValue) =
     | None ->
         // The function could not be translated to a linear function directly. Match on the top operation
         match V with
-        | SVFun (PDF_NORMAL, [| SVCon mean; sigma; W |]) | SVFun (PDF_NORMAL, [| W; sigma; SVCon mean |]) -> 
-            // We assume that either the mean or the argument is a constant. The other paramaters can be arbitrary symbolic values
-
-            // Convert the two symbolic values to score closures
+        | SVFun (PDF_NORMAL, [| mean; sigma; W |]) -> 
+            // Convert the symbolic values to score closures
+            let scoreClosureMean = toScoreClosure mean 
             let scoreClosureSigma = toScoreClosure sigma 
             let scoreClosureW = toScoreClosure W
 
-            // Assumes that sigma_l >= 0.0
-            let lowerBound (sigma_l, sigma_u) (w_l, w_u) =
-                // The smallest value is attained at the position in the w-interval that is furthest aways from the mean
-                let pointFurthestFromMean = if abs(w_l - mean) > abs(w_u - mean) then w_l else w_u
-
-                // The function \sigma -> pdfnormal(mean, sigma, pointFurthestFromMean) is monotonically increasing on (0, t) and monotonically decreasing on (t, \infty) for some value t (which we can compute but do not need here)
-                // The minimum is thus attained at one of the two endpoints of the sigma-interval (as sigma_l >= 0.0)
-                min (pdfNormal (mean, sigma_l, pointFurthestFromMean)) (pdfNormal (mean, sigma_u, pointFurthestFromMean))
-
-            // Assumes that sigma_l >= 0.0
-            let upperBound (sigma_l, sigma_u) (w_l, w_u) =
-                assert (sigma_l >= 0.0)
-
-                if w_l <= mean && mean <= w_u then 
-                    // The mean is included in the w-interval. The maximal value is thus attained at that mean with the smallest possible sigma (as we assume that sigma_l >= 0.0)
-                    pdfNormal (mean, sigma_l, mean)
-                else
-                    let pointClosestToMean = if w_u < mean then w_u else w_l
-                    // We can assume that pointClosestToMean <> mean 
-                    // We know that the maximal value is attained at pointClosestToMean
-
-                    // Compute the value of sigma such that pdfnormal(mean, sigma, pointClosestToMean) is maximal
-                    let sigmaThatMaximisesPdf = abs (mean - pointClosestToMean)
-
-                    // Note: The function \sigma -> pdfnormal(mean, sigma, pointClosestToMean) is monotonically increasing on (0, sigmaThatMaximisesPdf) and monote decreasing on (sigmaThatMaximisesPdf, \infty)
-                    if sigma_l <= sigmaThatMaximisesPdf && sigmaThatMaximisesPdf <= sigma_u then 
-                        // The value for sigma that maximises pdfnormal(mean, sigma, pointClosestToMean) is contained in the sigma-interval
-                        pdfNormal (mean, sigmaThatMaximisesPdf, pointClosestToMean) 
-                    else 
-                        // The max value is attained at one of the two endpoint of the sigma-interval (as sigma_l >= 0.0)
-                        max (pdfNormal (mean, sigma_l, pointClosestToMean) ) (pdfNormal (mean, sigma_u, pointClosestToMean) )
-
-
             let bounds (args : list<Interval>) =
-                // Separete the bounds used by sigma and W
-                let argsForSigma = args[0..scoreClosureSigma.LinearParts.Length - 1]
-                let argsForW = args[scoreClosureSigma.LinearParts.Length..]
+                // Separate the arguments used to compute bounds on mean, sigma, and W
+                let argsForMean = args[0..scoreClosureMean.LinearParts.Length - 1]
+                let argsForSigma = args[scoreClosureMean.LinearParts.Length..scoreClosureMean.LinearParts.Length + scoreClosureSigma.LinearParts.Length - 1]
+                let argsForW = args[scoreClosureMean.LinearParts.Length + scoreClosureSigma.LinearParts.Length..]
 
-                // Compute the bounds on sigma and take the abs. This ensures that all values are non-negative.
-                let sigmaBounds = (scoreClosureSigma.BoundNonLinearPart argsForSigma).Abs().ToPair
+                // Compute bounds on all arguments
+                let meanBounds = scoreClosureMean.BoundNonLinearPart argsForMean
+                let sigmaBounds = scoreClosureSigma.BoundNonLinearPart argsForSigma
+                let wBounds = scoreClosureW.BoundNonLinearPart argsForW
 
-                let wBounds = (scoreClosureW.BoundNonLinearPart argsForW).ToPair
+                pdfNormalBounds meanBounds sigmaBounds wBounds
 
-                let lower = lowerBound sigmaBounds wBounds
-                let upper = upperBound sigmaBounds wBounds
-                itv lower upper |> ensureNonnegative
-
-            { LinearParts = scoreClosureSigma.LinearParts @ scoreClosureW.LinearParts
+            { LinearParts = scoreClosureMean.LinearParts @ scoreClosureSigma.LinearParts @ scoreClosureW.LinearParts
               BoundNonLinearPart = bounds }
 
         | SVFun (ADD, [| W1; W2 |]) ->

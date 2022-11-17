@@ -212,6 +212,17 @@ let intersect (iv1: Interval) (iv2: Interval) : Interval =
 
     preciseInterval lo hi
 
+let tryIntersect (iv1: Interval) (iv2: Interval) : option<Interval> =
+    let lo = max iv1.lo iv2.lo
+    let hi = min iv1.hi iv2.hi
+
+    if lo > hi then
+        // The intersection is empty
+        None 
+    else 
+        preciseInterval lo hi
+        |> Some
+
 let ensureNonnegative (iv: Interval) =
     if iv.lo < 0.0 then
         Interval(0.0, iv.hi, false)
