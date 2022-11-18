@@ -176,6 +176,11 @@ type Interval =
     member inline this.StrictlyOverlaps(other: Interval) : bool =
         this.lo < other.hi && other.lo < this.hi
 
+    member inline this.Abs() : Interval =
+        let lo = if this.lo <= 0.0 && 0.0 <= this.hi then 0.0 else min (abs this.lo) (abs this.hi)
+        let hi = max (abs this.lo) (abs this.hi)
+        Interval(lo, hi)
+
 let allReals = Interval(-infinity, infinity)
 let unitInterval = Interval(0.0, 1.0, false)
 
@@ -206,6 +211,17 @@ let intersect (iv1: Interval) (iv2: Interval) : Interval =
         failwith $"Intersection of {iv1} and {iv2} is empty."
 
     preciseInterval lo hi
+
+let tryIntersect (iv1: Interval) (iv2: Interval) : option<Interval> =
+    let lo = max iv1.lo iv2.lo
+    let hi = min iv1.hi iv2.hi
+
+    if lo > hi then
+        // The intersection is empty
+        None 
+    else 
+        preciseInterval lo hi
+        |> Some
 
 let ensureNonnegative (iv: Interval) =
     if iv.lo < 0.0 then

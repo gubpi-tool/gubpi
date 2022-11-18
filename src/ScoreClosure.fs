@@ -53,34 +53,27 @@ let rec toScoreClosure (V: SymbolicValue) =
     | None ->
         // The function could not be translated to a linear function directly. Match on the top operation
         match V with
-        | SVFun (PDF_NORMAL, [| SVCon mean; SVCon sigma; W |]) | SVFun (PDF_NORMAL, [| W; SVCon sigma; SVCon mean |]) ->
-            // For the normal function, we assume that either the mean or the argument is constant.
-            // We then convert the argument to a score closure.
-            // Given bounds on the argument, BoundNonLinearPart, the computes lower and upper approximations on the value of the normal pdf on that interval
+        | SVFun (PDF_NORMAL, [| mean; sigma; W |]) -> 
+            // Convert the symbolic values to score closures
+            let scoreClosureMean = toScoreClosure mean 
+            let scoreClosureSigma = toScoreClosure sigma 
+            let scoreClosureW = toScoreClosure W
 
-            let recRes = toScoreClosure W
+            let bounds (args : list<Interval>) =
+                // Separate the arguments used to compute bounds on mean, sigma, and W
+                let argsForMean = args[0..scoreClosureMean.LinearParts.Length - 1]
+                let argsForSigma = args[scoreClosureMean.LinearParts.Length..scoreClosureMean.LinearParts.Length + scoreClosureSigma.LinearParts.Length - 1]
+                let argsForW = args[scoreClosureMean.LinearParts.Length + scoreClosureSigma.LinearParts.Length..]
 
-            // The lower bound on the pdf normal is taken at one of the ends of the interval
-            let normLowerApprox =
-                fun x y -> min (pdfNormal (mean, sigma, x)) (pdfNormal (mean, sigma, y))
+                // Compute bounds on all arguments
+                let meanBounds = scoreClosureMean.BoundNonLinearPart argsForMean
+                let sigmaBounds = scoreClosureSigma.BoundNonLinearPart argsForSigma
+                let wBounds = scoreClosureW.BoundNonLinearPart argsForW
 
-            // The upper bound on the pdf normal is taken at either one of the ends of the interval, or at the mean (if included in the interval)
-            let normUpperApprox x y =
-                if x <= mean && mean <= y then
-                    pdfNormal (mean, sigma, mean)
-                else
-                    max (pdfNormal (mean, sigma, x)) (pdfNormal (mean, sigma, y))
+                pdfNormalBounds meanBounds sigmaBounds wBounds
 
-
-            let bounds args =
-                let (l, u) = (recRes.BoundNonLinearPart args).ToPair
-                let lower = normLowerApprox l u
-                let upper = normUpperApprox l u
-                itv lower upper |> ensureNonnegative
-
-            { LinearParts = recRes.LinearParts
+            { LinearParts = scoreClosureMean.LinearParts @ scoreClosureSigma.LinearParts @ scoreClosureW.LinearParts
               BoundNonLinearPart = bounds }
-
 
         | SVFun (ADD, [| W1; W2 |]) ->
             // For addition, we convert both parts to a scoreClosure, take the union of the linear parts of both and BoundNonLinearPart just adds the bounds for each size
