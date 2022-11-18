@@ -105,6 +105,7 @@ let Log =
       ComputeInterval = fun args -> args.[0].Log() }
 
 let pdfNormal ((mean, sigma, x): double * double * double) : double =
+    let sigma = abs sigma
     if Double.IsFinite mean && Double.IsFinite sigma then
         if Double.IsFinite x then
             Math.Exp((-(x - mean) * (x - mean)) / (2.0 * sigma * sigma))
