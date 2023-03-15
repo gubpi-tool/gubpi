@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="GlobalConstants.fs" />
@@ -18,7 +18,7 @@
     <Compile Include="Typing.fs" />
     <Compile Include="ConstraintGeneration.fs" />
     <Compile Include="ConstraintSolver.fs" />
-    <Compile Include="VinciSystemCall.fs" />
+    <Compile Include="SystemCall.fs" />
     <Compile Include="LinearOptimization.fs" />
     <Compile Include="VolumeComputation.fs" />
     <Compile Include="Evaluation.fs" />

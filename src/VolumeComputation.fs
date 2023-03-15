@@ -12,7 +12,7 @@ module VolumeComputation
 open Interval
 open Util
 open LinearFunction
-open VinciSystemCall
+open SystemCall
 open UnionFind
 
 open System
@@ -136,16 +136,8 @@ let computeVolumeBox (conditions: list<LinearInequality>) (split: VarBoundMap) =
     if List.forall (fun (x: LinearInequality) -> isSingleVar x.Function) conditions then
         // All conditions are single Var, we can solve this directly
 
-        let usedVars =
-            conditions
-            |> List.map (fun x -> x.UsedVars)
-            |> Set.unionMany
-
         // For each variables we maintain upper and lower bounds (initially this is the bound given by split)
-        let mutable bounds =
-            [ for var in usedVars do
-                  (var, split.[var]) ]
-            |> Map.ofSeq
+        let mutable bounds = split
 
         // Iterate over every Linear Inequality
         for cond in conditions do
@@ -157,19 +149,33 @@ let computeVolumeBox (conditions: list<LinearInequality>) (split: VarBoundMap) =
             let threshold = cond.Threshold
             // The linear function has the form "factor * var + functionOffset >< thresholds"
 
-            let t = (threshold - functionOffset) / factor // We can assume factor <> 0.0
+            if factor = 0.0 then 
+                // The weight is zero, so either this constraints always holds or it does not 
+                let isSat = 
+                    match cond.Com with 
+                    | LEQ -> functionOffset <= threshold
+                    | LT -> functionOffset < threshold
+                    | GEQ -> functionOffset >= threshold
+                    | GT -> functionOffset > threshold
 
-            let lower, upper = bounds.[var].ToPair
+                if isSat then 
+                    ()
+                else 
+                    // This constraint is unsat, so we set the var-dimension to zero (effectley, setting the computd volume to 0)
+                    bounds <- Map.add var (preciseInterval 0.0 0.0) bounds
+            else 
+                let t = (threshold - functionOffset) / factor // We can assume factor <> 0.0
 
-            if (factor > 0.0 && (cond.Com = LEQ || cond.Com = LT))
-               || (factor < 0.0 && (cond.Com = GEQ || cond.Com = GT)) then
-                // cond is equivalent to var <= t, so we update the upper bound
-                let newUpper = min upper t
-                bounds <- Map.add var (preciseInterval lower newUpper) bounds
-            else
-                // cond is equivalent to var >= t, so we update the lowerBound
-                let newLower = max lower t
-                bounds <- Map.add var (preciseInterval newLower upper) bounds
+                let lower, upper = bounds.[var].ToPair
+
+                if (factor > 0.0 && (cond.Com = LEQ || cond.Com = LT)) || (factor < 0.0 && (cond.Com = GEQ || cond.Com = GT)) then
+                    // cond is equivalent to var <= t, so we update the upper bound
+                    let newUpper = min upper t
+                    bounds <- Map.add var (preciseInterval lower newUpper) bounds
+                else
+                    // cond is equivalent to var >= t, so we update the lowerBound
+                    let newLower = max lower t
+                    bounds <- Map.add var (preciseInterval newLower upper) bounds
 
 
         // bounds now contains the bounds on all variables (recall that the polytope is a rectangle)
@@ -227,7 +233,7 @@ let computeVolumeDirectly (conditions: list<LinearInequality>) (split: VarBoundM
                     // Otherwise we generate the output for VINCI and call Vinci via a system call
                     let text = generateVinciInput conditions split
 
-                    VinciSystemCall.computeVolumeVinci text
+                    SystemCall.computeVolumeVinci text
 
         // Add the result to the hasher
         if GlobalConstants.hashVolumeResults then
