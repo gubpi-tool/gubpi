@@ -9,6 +9,8 @@
 (****************************************************************************************)
 
 module Util
+#nowarn "59"
+
 
 open System
 open Interval
@@ -130,3 +132,40 @@ let modifyMapKey l =
     l
     |> Seq.collect (fun (f, x) -> x |> Map.toSeq |> Seq.map (fun (x, y) -> (f x, y)))
     |> Map.ofSeq
+
+
+
+module SystemCallUtil = 
+    type SystemCallResult = 
+        | SystemCallOutcome of String
+        | SystemCallError of String
+        | SystemCallTimeout
+
+    let systemCall cmd arg timeout =
+        let p = new System.Diagnostics.Process();
+        p.StartInfo.RedirectStandardOutput <- true
+        p.StartInfo.RedirectStandardError <- true
+        p.StartInfo.UseShellExecute <- false
+        p.StartInfo.FileName <- cmd
+        p.StartInfo.Arguments <- arg
+        p.Start() |> ignore 
+
+        let a = 
+            match timeout with 
+                | Option.None -> 
+                    true
+                | Some t -> 
+                    p.WaitForExit(t :> int)
+
+        if a then 
+            let err = p.StandardError.ReadToEnd() 
+
+            if err <> "" then 
+                SystemCallError err
+            else 
+                let res = p.StandardOutput.ReadToEnd()
+                p.Kill true
+                SystemCallOutcome res
+        else 
+            p.Kill true
+            SystemCallTimeout

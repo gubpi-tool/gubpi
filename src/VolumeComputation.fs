@@ -11,8 +11,8 @@ module VolumeComputation
 
 open Interval
 open Util
+open Util.SystemCallUtil
 open LinearFunction
-open SystemCall
 open UnionFind
 
 open System
@@ -190,6 +190,37 @@ let computeVolumeBox (conditions: list<LinearInequality>) (split: VarBoundMap) =
         // No direction solution is possible
         None
 
+let vinciStopwatch = System.Diagnostics.Stopwatch()
+let lpSolveStopwatch = System.Diagnostics.Stopwatch()
+
+// Computes the volume by calling the external tool vinci and parsing its output
+let computeVolumeVinci (s: string) : double =
+    // We get the path of the GuBPI executable. By convention, the vinci execuatble is located in the same dirctory
+    let vinciPath = 
+        System.IO.Path.Join [|System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location); "vinci"|]
+
+    vinciStopwatch.Start()
+    let out = Util.SystemCallUtil.systemCall vinciPath ("\"" + s + "\"") None
+    vinciStopwatch.Stop()
+
+    match out with 
+    | SystemCallOutcome out -> 
+        if out.Contains "unbounded!" then
+            System.Double.PositiveInfinity
+        else
+            double (out)
+
+    | SystemCallTimeout ->
+        printfn "Vinci timed out"
+        exit 0
+            
+    | SystemCallError err -> 
+        printfn "An error occured while performing analysis via vinci."
+        printfn $"The input was %s{s}\n"
+        printfn $"The error was:\n%A{err}"
+        exit 0
+
+
 // A map used to hash the results of the computation
 let mutable hashedRes = Map.empty
 
@@ -230,10 +261,9 @@ let computeVolumeDirectly (conditions: list<LinearInequality>) (split: VarBoundM
                     else
                         0.0
                 else
-                    // Otherwise we generate the output for VINCI and call Vinci via a system call
-                    let text = generateVinciInput conditions split
-
-                    SystemCall.computeVolumeVinci text
+                    // Otherwise we generate the output for VINCI and call Vinci
+                    generateVinciInput conditions split
+                    |> computeVolumeVinci
 
         // Add the result to the hasher
         if GlobalConstants.hashVolumeResults then

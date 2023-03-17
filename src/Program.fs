@@ -242,7 +242,7 @@ let main argv =
 
         printfn
             "Vinci computation: %.3f seconds"
-            (double SystemCall.vinciStopwatch.ElapsedMilliseconds
+            (double VolumeComputation.vinciStopwatch.ElapsedMilliseconds
             / 1000.0)
 
         printfn
