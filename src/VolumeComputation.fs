@@ -136,7 +136,10 @@ let computeVolumeBox (conditions: list<LinearInequality>) (split: VarBoundMap) =
     if List.forall (fun (x: LinearInequality) -> isSingleVar x.Function) conditions then
         // All conditions are single Var, we can solve this directly
 
-        // For each variables we maintain upper and lower bounds (initially this is the bound given by split)
+        // For each variables, we maintain upper and lower bounds (initially this is the bound given by split)
+        // We need to consider ALL variables, even if they are not used in any condition in conditions as this still impact the volume
+        // For example, if we have the constraint 0 <= x <= 1 and the bounds (given by split) of 0 <= x <= 1, and 0 <= y <= 2, we want to compute volume=2
+        // If we only consider those variables that are used in some conditions it would give volume=1 which results in wrong bounds in the further computation (as we multiply the volume with pdf-bounds on the split area)
         let mutable bounds = split
 
         // Iterate over every Linear Inequality
