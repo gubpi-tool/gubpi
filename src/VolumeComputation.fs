@@ -136,24 +136,24 @@ let computeVolumeBox (conditions: list<LinearInequality>) (split: VarBoundMap) =
     if List.forall (fun (x: LinearInequality) -> isSingleVar x.Function) conditions then
         // All conditions are single Var, we can solve this directly
 
-        // For each variables, we maintain upper and lower bounds (initially this is the bound given by split)
-        // We need to consider ALL variables, even if they are not used in any condition in conditions as this still impact the volume
-        // For example, if we have the constraint 0 <= x <= 1 and the bounds (given by split) of 0 <= x <= 1, and 0 <= y <= 2, we want to compute volume=2
-        // If we only consider those variables that are used in some conditions it would give volume=1 which results in wrong bounds in the further computation (as we multiply the volume with pdf-bounds on the split area)
+        // For each variable, we maintain upper and lower bounds (initially this is the bound given by split)
+        // We need to consider ALL variables, even if they are not used in any condition as this still impacts the volume
+        // For example, if we have the constraint 0 <= x <= 1 and the bounds (given by split) of 0 <= x <= 1, and 0 <= y <= 2, we want to compute volume=2.
+        // If we only consider those variables that are used in some conditions, it would give volume=1, which results in wrong bounds in the further computation (as we multiply the volume with pdf-bounds on the split area).
         let mutable bounds = split
 
-        // Iterate over every Linear Inequality
+        // Iterate over every LinearInequality
         for cond in conditions do
             let var =
-                (cond.Function.UsedVars |> Set.toList).[0] // By assumption there is exactly one variable
+                (cond.Function.UsedVars |> Set.toList).[0] // By assumption there is exactly one variable.
 
             let factor = cond.Function.Coefficients.[var]
             let functionOffset = cond.Function.Offset
             let threshold = cond.Threshold
-            // The linear function has the form "factor * var + functionOffset >< thresholds"
+            // The linear function has the form "factor * var + functionOffset <> thresholds"
 
             if factor = 0.0 then
-                // The weight is zero, so either this constraints always holds or it does not
+                // The weight is zero, so either this constraints always holds or it never does.
                 let isSat =
                     match cond.Com with
                     | LEQ -> functionOffset <= threshold
@@ -164,10 +164,10 @@ let computeVolumeBox (conditions: list<LinearInequality>) (split: VarBoundMap) =
                 if isSat then
                     ()
                 else
-                    // This constraint is unsat, so we set the var-dimension to zero (effectley, setting the computd volume to 0)
+                    // This constraint is unsat, so we set the var range to zero (effectively setting the computed volume to 0).
                     bounds <- Map.add var (preciseInterval 0.0 0.0) bounds
             else
-                let t = (threshold - functionOffset) / factor // We can assume factor <> 0.0
+                let t = (threshold - functionOffset) / factor // We know that factor <> 0.0
 
                 let lower, upper = bounds.[var].ToPair
 
@@ -176,12 +176,12 @@ let computeVolumeBox (conditions: list<LinearInequality>) (split: VarBoundMap) =
                     let newUpper = min upper t
                     bounds <- Map.add var (preciseInterval lower newUpper) bounds
                 else
-                    // cond is equivalent to var >= t, so we update the lowerBound
+                    // cond is equivalent to var >= t, so we update the lower bound
                     let newLower = max lower t
                     bounds <- Map.add var (preciseInterval newLower upper) bounds
 
 
-        // bounds now contains the bounds on all variables (recall that the polytope is a rectangle)
+        // bounds now contains the bounds on all variables (recall that the polytope is a rectangle).
         // We can compute the volume by multiplying the side lengths.
         let vol =
             bounds
