@@ -28,7 +28,7 @@ In case linear optimization is applicable, GuBPI performs analysis with an optim
 ### Build GuBPI locally
 
 To make use of the optimized interval-based semantics, GuBPI makes use of [VINCI](https://link.springer.com/chapter/10.1007/978-3-0348-8438-9_6) to compute the volume of a convex polytope.
-The call to VINCI is made as a system call, so the vinci executable should be located in the same folder as the GuBPI executable (see the build instructions below).
+VINCI is run as a subprocess, so the VINCI executable should be located in the same folder as the GuBPI executable (see the build instructions below).
 
 In order to build this project, you need the .NET 6 SDK (we tested version 6.0.200), a C/C++ Complier (we tested gcc) and GNU make (we tested GNU Make 3.81).
 To install make and gcc, you can install the `build-essential` package (on Linux) or Xcode (on macOS).

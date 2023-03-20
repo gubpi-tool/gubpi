@@ -135,37 +135,37 @@ let modifyMapKey l =
 
 
 
-module SystemCallUtil = 
-    type SystemCallResult = 
-        | SystemCallOutcome of String
-        | SystemCallError of String
-        | SystemCallTimeout
+module SubprocessUtil =
+    type SubprocessResult =
+        | SubprocessOutcome of String
+        | SubprocessError of String
+        | SubprocessTimeout
 
-    let systemCall cmd arg timeout =
+    let runCommandWithTimeout cmd arg timeout =
         let p = new System.Diagnostics.Process();
         p.StartInfo.RedirectStandardOutput <- true
         p.StartInfo.RedirectStandardError <- true
         p.StartInfo.UseShellExecute <- false
         p.StartInfo.FileName <- cmd
         p.StartInfo.Arguments <- arg
-        p.Start() |> ignore 
+        p.Start() |> ignore
 
-        let a = 
-            match timeout with 
-                | Option.None -> 
+        let a =
+            match timeout with
+                | Option.None ->
                     true
-                | Some t -> 
+                | Some t ->
                     p.WaitForExit(t :> int)
 
-        if a then 
-            let err = p.StandardError.ReadToEnd() 
+        if a then
+            let err = p.StandardError.ReadToEnd()
 
-            if err <> "" then 
-                SystemCallError err
-            else 
+            if err <> "" then
+                SubprocessError err
+            else
                 let res = p.StandardOutput.ReadToEnd()
                 p.Kill true
-                SystemCallOutcome res
-        else 
+                SubprocessOutcome res
+        else
             p.Kill true
-            SystemCallTimeout
+            SubprocessTimeout

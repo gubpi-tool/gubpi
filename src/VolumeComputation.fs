@@ -11,7 +11,7 @@ module VolumeComputation
 
 open Interval
 open Util
-open Util.SystemCallUtil
+open Util.SubprocessUtil
 open LinearFunction
 open UnionFind
 
@@ -152,21 +152,21 @@ let computeVolumeBox (conditions: list<LinearInequality>) (split: VarBoundMap) =
             let threshold = cond.Threshold
             // The linear function has the form "factor * var + functionOffset >< thresholds"
 
-            if factor = 0.0 then 
-                // The weight is zero, so either this constraints always holds or it does not 
-                let isSat = 
-                    match cond.Com with 
+            if factor = 0.0 then
+                // The weight is zero, so either this constraints always holds or it does not
+                let isSat =
+                    match cond.Com with
                     | LEQ -> functionOffset <= threshold
                     | LT -> functionOffset < threshold
                     | GEQ -> functionOffset >= threshold
                     | GT -> functionOffset > threshold
 
-                if isSat then 
+                if isSat then
                     ()
-                else 
+                else
                     // This constraint is unsat, so we set the var-dimension to zero (effectley, setting the computd volume to 0)
                     bounds <- Map.add var (preciseInterval 0.0 0.0) bounds
-            else 
+            else
                 let t = (threshold - functionOffset) / factor // We can assume factor <> 0.0
 
                 let lower, upper = bounds.[var].ToPair
@@ -199,25 +199,25 @@ let lpSolveStopwatch = System.Diagnostics.Stopwatch()
 // Computes the volume by calling the external tool vinci and parsing its output
 let computeVolumeVinci (s: string) : double =
     // We get the path of the GuBPI executable. By convention, the vinci execuatble is located in the same dirctory
-    let vinciPath = 
+    let vinciPath =
         System.IO.Path.Join [|System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location); "vinci"|]
 
     vinciStopwatch.Start()
-    let out = Util.SystemCallUtil.systemCall vinciPath ("\"" + s + "\"") None
+    let out = Util.SubprocessUtil.runCommandWithTimeout vinciPath ("\"" + s + "\"") None
     vinciStopwatch.Stop()
 
-    match out with 
-    | SystemCallOutcome out -> 
+    match out with
+    | SubprocessOutcome out ->
         if out.Contains "unbounded!" then
             System.Double.PositiveInfinity
         else
             double (out)
 
-    | SystemCallTimeout ->
+    | SubprocessTimeout ->
         printfn "Vinci timed out"
         exit 0
-            
-    | SystemCallError err -> 
+
+    | SubprocessError err ->
         printfn "An error occured while performing analysis via vinci."
         printfn $"The input was %s{s}\n"
         printfn $"The error was:\n%A{err}"
