@@ -9,7 +9,6 @@
 (****************************************************************************************)
 
 module Util
-#nowarn "59"
 
 
 open System
@@ -141,7 +140,7 @@ module SubprocessUtil =
         | SubprocessError of String
         | SubprocessTimeout
 
-    let runCommandWithTimeout cmd arg timeout =
+    let runCommandWithTimeout cmd arg (timeout: option<int>) =
         let p = new System.Diagnostics.Process();
         p.StartInfo.RedirectStandardOutput <- true
         p.StartInfo.RedirectStandardError <- true
@@ -155,7 +154,7 @@ module SubprocessUtil =
                 | Option.None ->
                     true
                 | Some t ->
-                    p.WaitForExit(t :> int)
+                    p.WaitForExit t
 
         if a then
             let err = p.StandardError.ReadToEnd()
