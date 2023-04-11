@@ -133,6 +133,13 @@ let modifyMapKey l =
     |> Map.ofSeq
 
 
+let rec combineStringsWithSeperator (s: String) (l: list<String>) = 
+    match l with 
+    | [] -> ""
+    | [x] -> x
+    | x::y::xs -> 
+        x + s + combineStringsWithSeperator s (y::xs)
+
 
 module SubprocessUtil =
     type SubprocessResult =

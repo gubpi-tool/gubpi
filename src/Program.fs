@@ -246,8 +246,8 @@ let main argv =
             / 1000.0)
 
         printfn
-            "Flips computation: %.3f seconds"
-            (double LinearOptimization.linearOptStopwatch.ElapsedMilliseconds
+            "Linear programming solving: %.3f seconds"
+            (double LinearOptimization.linearProgrammingStopwatch.ElapsedMilliseconds
             / 1000.0)
 
     with
