@@ -194,7 +194,6 @@ let computeVolumeBox (conditions: list<LinearInequality>) (split: VarBoundMap) =
         None
 
 let vinciStopwatch = System.Diagnostics.Stopwatch()
-let lpSolveStopwatch = System.Diagnostics.Stopwatch()
 
 // Computes the volume by calling the external tool vinci and parsing its output
 let computeVolumeVinci (s: string) : double =
@@ -203,20 +202,15 @@ let computeVolumeVinci (s: string) : double =
         System.IO.Path.Join [|System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location); "vinci"|]
 
     vinciStopwatch.Start()
-    let out = Util.SubprocessUtil.runCommandWithTimeout vinciPath ("\"" + s + "\"") None
+    let out = Util.SubprocessUtil.exec vinciPath ("\"" + s + "\"")
     vinciStopwatch.Stop()
 
     match out with
-    | SubprocessOutcome out ->
+    | SubprocessOutcome (out, _) ->
         if out.Contains "unbounded!" then
             System.Double.PositiveInfinity
         else
             double (out)
-
-    | SubprocessTimeout ->
-        printfn "Vinci timed out"
-        exit 0
-
     | SubprocessError err ->
         printfn "An error occured while performing analysis via vinci."
         printfn $"The input was %s{s}\n"

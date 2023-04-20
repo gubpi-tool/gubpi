@@ -136,35 +136,39 @@ let modifyMapKey l =
 
 module SubprocessUtil =
     type SubprocessResult =
-        | SubprocessOutcome of String
+        | SubprocessOutcome of String * int
         | SubprocessError of String
-        | SubprocessTimeout
 
-    let runCommandWithTimeout cmd arg (timeout: option<int>) =
-        let p = new System.Diagnostics.Process();
-        p.StartInfo.RedirectStandardOutput <- true
-        p.StartInfo.RedirectStandardError <- true
-        p.StartInfo.UseShellExecute <- false
-        p.StartInfo.FileName <- cmd
-        p.StartInfo.Arguments <- arg
-        p.Start() |> ignore
+    type private ProcessResult =
+        { ExitCode: int;
+        Stdout: string;
+        Stderr: string }
 
-        let a =
-            match timeout with
-                | Option.None ->
-                    true
-                | Some t ->
-                    p.WaitForExit t
+    let private executeProcess (exe, cmdline) =
+        let psi =
+            System.Diagnostics.ProcessStartInfo(exe, cmdline)
 
-        if a then
-            let err = p.StandardError.ReadToEnd()
+        psi.UseShellExecute <- false
+        psi.RedirectStandardOutput <- true
+        psi.RedirectStandardError <- true
+        psi.CreateNoWindow <- true
+        let p = System.Diagnostics.Process.Start(psi)
+        let output = System.Text.StringBuilder()
+        let error = System.Text.StringBuilder()
+        p.OutputDataReceived.Add(fun args -> output.Append(args.Data) |> ignore)
+        p.ErrorDataReceived.Add(fun args -> error.Append(args.Data) |> ignore)
+        p.BeginErrorReadLine()
+        p.BeginOutputReadLine()
+        p.WaitForExit()
 
-            if err <> "" then
-                SubprocessError err
-            else
-                let res = p.StandardOutput.ReadToEnd()
-                p.Kill true
-                SubprocessOutcome res
-        else
-            p.Kill true
-            SubprocessTimeout
+        { ExitCode = p.ExitCode;
+        Stdout = output.ToString();
+        Stderr = error.ToString() }
+
+    let exec (cmd: string) (arg: string) = 
+        let res= executeProcess(cmd, arg)
+
+        if res.Stderr <> "" then   
+            SubprocessError res.Stderr
+        else 
+            SubprocessOutcome (res.Stdout, res.ExitCode)
