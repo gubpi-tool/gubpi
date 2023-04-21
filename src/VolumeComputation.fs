@@ -11,8 +11,8 @@ module VolumeComputation
 
 open Interval
 open Util
+open Util.SubprocessUtil
 open LinearFunction
-open VinciSystemCall
 open UnionFind
 
 open System
@@ -136,43 +136,52 @@ let computeVolumeBox (conditions: list<LinearInequality>) (split: VarBoundMap) =
     if List.forall (fun (x: LinearInequality) -> isSingleVar x.Function) conditions then
         // All conditions are single Var, we can solve this directly
 
-        let usedVars =
-            conditions
-            |> List.map (fun x -> x.UsedVars)
-            |> Set.unionMany
+        // For each variable, we maintain upper and lower bounds (initially this is the bound given by split)
+        // We need to consider ALL variables, even if they are not used in any condition as this still impacts the volume
+        // For example, if we have the constraint 0 <= x <= 1 and the bounds (given by split) of 0 <= x <= 1, and 0 <= y <= 2, we want to compute volume=2.
+        // If we only consider those variables that are used in some conditions, it would give volume=1, which results in wrong bounds in the further computation (as we multiply the volume with pdf-bounds on the split area).
+        let mutable bounds = split
 
-        // For each variables we maintain upper and lower bounds (initially this is the bound given by split)
-        let mutable bounds =
-            [ for var in usedVars do
-                  (var, split.[var]) ]
-            |> Map.ofSeq
-
-        // Iterate over every Linear Inequality
+        // Iterate over every LinearInequality
         for cond in conditions do
             let var =
-                (cond.Function.UsedVars |> Set.toList).[0] // By assumption there is exactly one variable
+                (cond.Function.UsedVars |> Set.toList).[0] // By assumption there is exactly one variable.
 
             let factor = cond.Function.Coefficients.[var]
             let functionOffset = cond.Function.Offset
             let threshold = cond.Threshold
-            // The linear function has the form "factor * var + functionOffset >< thresholds"
+            // The linear function has the form "factor * var + functionOffset <> thresholds"
 
-            let t = (threshold - functionOffset) / factor // We can assume factor <> 0.0
+            if factor = 0.0 then
+                // The weight is zero, so either this constraints always holds or it never does.
+                let isSat =
+                    match cond.Com with
+                    | LEQ -> functionOffset <= threshold
+                    | LT -> functionOffset < threshold
+                    | GEQ -> functionOffset >= threshold
+                    | GT -> functionOffset > threshold
 
-            let lower, upper = bounds.[var].ToPair
-
-            if (factor > 0.0 && (cond.Com = LEQ || cond.Com = LT))
-               || (factor < 0.0 && (cond.Com = GEQ || cond.Com = GT)) then
-                // cond is equivalent to var <= t, so we update the upper bound
-                let newUpper = min upper t
-                bounds <- Map.add var (preciseInterval lower newUpper) bounds
+                if isSat then
+                    ()
+                else
+                    // This constraint is unsat, so we set the var range to zero (effectively setting the computed volume to 0).
+                    bounds <- Map.add var (preciseInterval 0.0 0.0) bounds
             else
-                // cond is equivalent to var >= t, so we update the lowerBound
-                let newLower = max lower t
-                bounds <- Map.add var (preciseInterval newLower upper) bounds
+                let t = (threshold - functionOffset) / factor // We know that factor <> 0.0
+
+                let lower, upper = bounds.[var].ToPair
+
+                if (factor > 0.0 && (cond.Com = LEQ || cond.Com = LT)) || (factor < 0.0 && (cond.Com = GEQ || cond.Com = GT)) then
+                    // cond is equivalent to var <= t, so we update the upper bound
+                    let newUpper = min upper t
+                    bounds <- Map.add var (preciseInterval lower newUpper) bounds
+                else
+                    // cond is equivalent to var >= t, so we update the lower bound
+                    let newLower = max lower t
+                    bounds <- Map.add var (preciseInterval newLower upper) bounds
 
 
-        // bounds now contains the bounds on all variables (recall that the polytope is a rectangle)
+        // bounds now contains the bounds on all variables (recall that the polytope is a rectangle).
         // We can compute the volume by multiplying the side lengths.
         let vol =
             bounds
@@ -183,6 +192,31 @@ let computeVolumeBox (conditions: list<LinearInequality>) (split: VarBoundMap) =
     else
         // No direction solution is possible
         None
+
+let vinciStopwatch = System.Diagnostics.Stopwatch()
+
+// Computes the volume by calling the external tool vinci and parsing its output
+let computeVolumeVinci (s: string) : double =
+    // We get the path of the GuBPI executable. By convention, the vinci execuatble is located in the same dirctory
+    let vinciPath =
+        System.IO.Path.Join [|System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location); "vinci"|]
+
+    vinciStopwatch.Start()
+    let out = Util.SubprocessUtil.exec vinciPath ("\"" + s + "\"")
+    vinciStopwatch.Stop()
+
+    match out with
+    | SubprocessOutcome (out, _) ->
+        if out.Contains "unbounded!" then
+            System.Double.PositiveInfinity
+        else
+            double (out)
+    | SubprocessError err ->
+        printfn "An error occured while performing analysis via vinci."
+        printfn $"The input was %s{s}\n"
+        printfn $"The error was:\n%A{err}"
+        exit 0
+
 
 // A map used to hash the results of the computation
 let mutable hashedRes = Map.empty
@@ -224,10 +258,9 @@ let computeVolumeDirectly (conditions: list<LinearInequality>) (split: VarBoundM
                     else
                         0.0
                 else
-                    // Otherwise we generate the output for VINCI and call Vinci via a system call
-                    let text = generateVinciInput conditions split
-
-                    VinciSystemCall.computeVolumeVinci text
+                    // Otherwise we generate the output for VINCI and call Vinci
+                    generateVinciInput conditions split
+                    |> computeVolumeVinci
 
         // Add the result to the hasher
         if GlobalConstants.hashVolumeResults then

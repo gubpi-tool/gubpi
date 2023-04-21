@@ -10,6 +10,7 @@
 
 module Util
 
+
 open System
 open Interval
 
@@ -130,3 +131,44 @@ let modifyMapKey l =
     l
     |> Seq.collect (fun (f, x) -> x |> Map.toSeq |> Seq.map (fun (x, y) -> (f x, y)))
     |> Map.ofSeq
+
+
+
+module SubprocessUtil =
+    type SubprocessResult =
+        | SubprocessOutcome of String * int
+        | SubprocessError of String
+
+    type private ProcessResult =
+        { ExitCode: int;
+        Stdout: string;
+        Stderr: string }
+
+    let private executeProcess (exe, cmdline) =
+        let psi =
+            System.Diagnostics.ProcessStartInfo(exe, cmdline)
+
+        psi.UseShellExecute <- false
+        psi.RedirectStandardOutput <- true
+        psi.RedirectStandardError <- true
+        psi.CreateNoWindow <- true
+        let p = System.Diagnostics.Process.Start(psi)
+        let output = System.Text.StringBuilder()
+        let error = System.Text.StringBuilder()
+        p.OutputDataReceived.Add(fun args -> output.Append(args.Data) |> ignore)
+        p.ErrorDataReceived.Add(fun args -> error.Append(args.Data) |> ignore)
+        p.BeginErrorReadLine()
+        p.BeginOutputReadLine()
+        p.WaitForExit()
+
+        { ExitCode = p.ExitCode;
+        Stdout = output.ToString();
+        Stderr = error.ToString() }
+
+    let exec (cmd: string) (arg: string) = 
+        let res= executeProcess(cmd, arg)
+
+        if res.Stderr <> "" then   
+            SubprocessError res.Stderr
+        else 
+            SubprocessOutcome (res.Stdout, res.ExitCode)

@@ -1,0 +1,16 @@
+# depth 12
+# discretization -0.1 7.9 1
+
+# outputSplitProgress 0
+# outputCurrentPath 0
+# outputCurrentArea 0
+
+letrec f money =
+    if (money < 0) then
+        0
+    else
+        let bet = sample uniform(0, 1) in
+        let money = money - bet in
+        let money = money + bet in
+        f money
+in f 0
